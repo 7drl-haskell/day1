@@ -1,0 +1,8 @@
+resolver: lts-13.5
+
+packages:
+- .
+- ../grid-proto
+
+extra-deps:
+- sdl2-fps-0.0.2

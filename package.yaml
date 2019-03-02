@@ -1,0 +1,35 @@
+name:                day1
+version:             0.1.0.0
+github:              "7drl-haskell/day1"
+license:             BSD3
+author:              "Author name here"
+maintainer:          "example@example.com"
+copyright:           "2019 Author name here"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+synopsis:            Day 1 of 7drl 2019
+category:            Game
+description:         Please see the README on GitHub at <https://github.com/7drl-haskell/day1.
+
+dependencies:
+- base >= 4.7 && < 5
+- grid-proto
+- containers
+- random
+- mtl
+
+library:
+  source-dirs: src
+
+executables:
+  day1:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - day1
