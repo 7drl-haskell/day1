@@ -2,6 +2,8 @@ module Day1 where
 
 import GridProto.Classic
 import GridProto.Core
+import Data.Char
+import Data.Tuple
 
 main :: IO ()
 main = runClassic classic
@@ -84,12 +86,14 @@ updatePlayerPos Input{keys=keys} (x,y) = (x',y')
 tileMap :: State -> Map (Int, Int) Tile
 tileMap st = case gameMode st of
   GameMode'Start -> fromList []
-  GameMode'Play -> mergeTiles ( fromList [ ( (x,y), Tile Nothing Nothing (Just wh1) ) ] ) ( mergeTiles ( wallTileMap testWalls ) clear )
+  GameMode'Play -> mergeTiles playerTile ( mergeTiles testDoors ( mergeTiles testWalls clear ) )
   GameMode'GameOver -> fromList []
   where
-    testWalls = [(0,1), (0,2), (0,3), (0,4), (0,5), (8,3), (8,3), (8,3), (8,3), (8,3)]
     (x,y) = playerPos (player (playState st))
     clear = clearTileMap (colorFromRoomIndex (playerRoom (player (playState st))))
+    playerTile = fromList [ ( (x,y), Tile Nothing Nothing (Just wh1) ) ]
+    testDoors = doorTileMap [1, 2, 3] [(9,8), (10, 13), (3, 7)]
+    testWalls = wallTileMap [(0,1), (0,2), (0,3), (0,4), (0,5), (8,1), (8,2), (8,3), (8,4), (8,5), (15, 0), (15, 1), (15, 2), (15, 3), (15, 4)]
 
 clearTileMap :: Color -> Map (Int, Int) Tile
 clearTileMap c = fromList
@@ -98,10 +102,15 @@ clearTileMap c = fromList
   , x <- [0..pred screenW]
   ]
 
+  -- Tried to use TupleSections pragma but it wouldn't work
 wallTileMap :: [(Int, Int)] -> Map (Int, Int) Tile
-wallTileMap locs = fromList 
-  [ ((x,y), Tile Nothing Nothing (Just bk2))
-  | x <- map fst locs
+wallTileMap locs = fromList $ map (swap . (,) (Tile Nothing Nothing (Just bk2))) locs 
+
+doorTileMap :: [Int] -> [(Int, Int)] -> Map (Int, Int) Tile
+doorTileMap ids locs = fromList 
+  [ ((x,y), Tile ( Just (intToDigit i, bk2) ) ( Just (Square, bk2) ) Nothing)
+  | i <- ids
+  , x <- map fst locs
   , y <- map snd locs
   ]
 
