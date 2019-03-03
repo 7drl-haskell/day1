@@ -63,8 +63,10 @@ update input st = case scene st of
 
 updateStartScene :: Input -> State -> State
 updateStartScene input st = st
-  { scene = if lookupKey (keys input) Enter == Pressed then Scene'Play else Scene'Start
+  { scene = if isStart then Scene'Play else Scene'Start
   }
+  where
+    isStart = lookupKey (keys input) Enter == Pressed || lookupKey (keys input) (Char ' ') == Pressed
 
 updatePlayer :: Input -> Player -> Player
 updatePlayer input p = p
