@@ -129,7 +129,6 @@ colorFromRoomIndex (RoomIndex idx) = colors !! (idx `mod` len)
     colors = colorWheel2
     len = length colors
     
-  -- Tried to use TupleSections pragma but it wouldn't work
 wallTileMap :: [(Int, Int)] -> Map (Int, Int) Tile
 wallTileMap locs = fromList $ map (swap . (,) (Tile Nothing Nothing (Just bk2))) locs 
 
