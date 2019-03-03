@@ -84,10 +84,10 @@ updatePlayerPos Input{keys=keys} (x,y) = (x',y')
 tileMap :: State -> Map (Int, Int) Tile
 tileMap st = case gameMode st of
   GameMode'Start -> fromList []
-  GameMode'Play -> mergeTiles fromList [ ( (x,y), Tile Nothing Nothing (Just wh1) ) ] $ clear
-
+  GameMode'Play -> mergeTiles ( fromList [ ( (x,y), Tile Nothing Nothing (Just wh1) ) ] ) ( mergeTiles ( wallTileMap testWalls ) clear )
   GameMode'GameOver -> fromList []
   where
+    testWalls = [(0,1), (0,2), (0,3), (0,4), (0,5), (8,3), (8,3), (8,3), (8,3), (8,3)]
     (x,y) = playerPos (player (playState st))
     clear = clearTileMap (colorFromRoomIndex (playerRoom (player (playState st))))
 
@@ -96,6 +96,13 @@ clearTileMap c = fromList
   [ ((x,y), Tile Nothing Nothing (Just c))
   | y <- [0..pred screenH]
   , x <- [0..pred screenW]
+  ]
+
+wallTileMap :: [(Int, Int)] -> Map (Int, Int) Tile
+wallTileMap locs = fromList 
+  [ ((x,y), Tile Nothing Nothing (Just bk2))
+  | x <- map fst locs
+  , y <- map snd locs
   ]
 
 colorFromRoomIndex :: RoomIndex -> Color
