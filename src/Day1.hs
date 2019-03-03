@@ -2,6 +2,8 @@ module Day1 where
 
 import GridProto.Classic
 import GridProto.Core
+import Data.Tuple
+import Data.Char
 
 main :: IO ()
 main = runClassic classic
@@ -91,11 +93,14 @@ updatePlayerPos Input{keys=keys} (x,y) = (x',y')
 tileMap :: State -> Map (Int, Int) Tile
 tileMap st = case scene st of
   Scene'Start -> text "DAY 1" White1 (screenW `div` 2 - 2, screenH `div` 2)
-  Scene'Play -> mergeTiles clear $ fromList [ ( (x,y), Tile Nothing Nothing (Just wh1) ) ]
+  Scene'Play -> mergeTiles playerTile ( mergeTiles testDoors ( mergeTiles testWalls clear ) )
   Scene'GameOver -> fromList []
   where
     (x,y) = playerPos (player (playState st))
     clear = clearTileMap (colorFromRoomIndex (playerRoom (player (playState st))))
+    playerTile = fromList [ ( (x,y), Tile Nothing Nothing (Just wh1) ) ]
+    testDoors = doorTileMap [1, 2, 3] [(9,8), (10, 13), (3, 7)]
+    testWalls = wallTileMap [(0,1), (0,2), (0,3), (0,4), (0,5), (8,1), (8,2), (8,3), (8,4), (8,5), (15, 0), (15, 1), (15, 2), (15, 3), (15, 4)]
 
 text :: String -> Color -> (Int, Int) -> Map (Int, Int) Tile
 text s c (x,y) = fromList (line s)
@@ -115,4 +120,13 @@ colorFromRoomIndex (RoomIndex idx) = colors !! (idx `mod` len)
   where
     colors = rainbow
     len = length colors
+    
+  -- Tried to use TupleSections pragma but it wouldn't work
+wallTileMap :: [(Int, Int)] -> Map (Int, Int) Tile
+wallTileMap locs = fromList $ map (swap . (,) (Tile Nothing Nothing (Just bk2))) locs 
 
+doorTileMap :: [Int] -> [(Int, Int)] -> Map (Int, Int) Tile
+doorTileMap ids locs = fromList $ zipWith makeDoorTile ids locs
+
+makeDoorTile :: Int -> (Int, Int) -> ((Int, Int), Tile)
+makeDoorTile id loc = (,) loc $ Tile ( Just (intToDigit id, bk2) ) ( Just (Square, bk2) ) Nothing
