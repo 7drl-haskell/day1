@@ -84,7 +84,8 @@ updatePlayerPos Input{keys=keys} (x,y) = (x',y')
 tileMap :: State -> Map (Int, Int) Tile
 tileMap st = case gameMode st of
   GameMode'Start -> fromList []
-  GameMode'Play -> mergeTiles clear $ fromList [ ( (x,y), Tile Nothing Nothing (Just wh1) ) ]
+  GameMode'Play -> mergeTiles fromList [ ( (x,y), Tile Nothing Nothing (Just wh1) ) ] $ clear
+
   GameMode'GameOver -> fromList []
   where
     (x,y) = playerPos (player (playState st))
@@ -100,6 +101,6 @@ clearTileMap c = fromList
 colorFromRoomIndex :: RoomIndex -> Color
 colorFromRoomIndex (RoomIndex idx) = colors !! (idx `mod` len)
   where
-    colors = colorWheel2
+    colors = rainbow
     len = length colors
 
