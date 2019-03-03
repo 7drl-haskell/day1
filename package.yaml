@@ -20,6 +20,9 @@ dependencies:
 - random
 - mtl
 
+default-extensions:
+  - GeneralizedNewtypeDeriving
+
 library:
   source-dirs: src
 
