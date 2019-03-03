@@ -113,6 +113,6 @@ clearTileMap c = fromList
 colorFromRoomIndex :: RoomIndex -> Color
 colorFromRoomIndex (RoomIndex idx) = colors !! (idx `mod` len)
   where
-    colors = colorWheel2
+    colors = rainbow
     len = length colors
 
