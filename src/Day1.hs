@@ -109,8 +109,8 @@ wallTileMap locs = fromList $ map (swap . (,) (Tile Nothing Nothing (Just bk2)))
 doorTileMap :: [Int] -> [(Int, Int)] -> Map (Int, Int) Tile
 doorTileMap ids locs = fromList $ zipWith makeDoorTile ids locs
 
-makeDoorTile :: Int -> (Int, Int) -> Tile
-makeDoorTile id loc = Tile ( Just (intToDigit id, bk2) ) ( Just (Square, bk2) ) Nothing
+makeDoorTile :: Int -> (Int, Int) -> ((Int, Int), Tile)
+makeDoorTile id loc = (,) loc $ Tile ( Just (intToDigit id, bk2) ) ( Just (Square, bk2) ) Nothing
 
 colorFromRoomIndex :: RoomIndex -> Color
 colorFromRoomIndex (RoomIndex idx) = colors !! (idx `mod` len)
