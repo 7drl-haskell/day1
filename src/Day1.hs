@@ -7,14 +7,14 @@ main :: IO ()
 main = runClassic classic
 
 data State = State
-  { gameMode :: GameMode
+  { scene :: Scene
   , playState :: PlayState
   } deriving (Show, Eq)
 
-data GameMode
-  = GameMode'Start
-  | GameMode'Play
-  | GameMode'GameOver
+data Scene
+  = Scene'Start
+  | Scene'Play
+  | Scene'GameOver
   deriving (Show, Eq)
 
 data PlayState = PlayState
@@ -49,17 +49,24 @@ screenH = 30
 
 initState :: State
 initState = State
-  { gameMode = GameMode'Play
+  { scene = Scene'Start
   , playState = PlayState (Player (0,0) 4)
   }
 
 update :: Input -> State -> IO State
-update input st = case gameMode st of
-  GameMode'Start -> return st
-  GameMode'Play -> return $ st
+update input st = case scene st of
+  Scene'Start -> return $ updateStartScene input st
+  Scene'Play -> return $ st
     { playState = (playState st)
       { player = updatePlayer input (player (playState st)) } }
-  GameMode'GameOver -> return st
+  Scene'GameOver -> return st
+
+updateStartScene :: Input -> State -> State
+updateStartScene input st = st
+  { scene = if isStart then Scene'Play else Scene'Start
+  }
+  where
+    isStart = lookupKey (keys input) Enter == Pressed || lookupKey (keys input) (Char ' ') == Pressed
 
 updatePlayer :: Input -> Player -> Player
 updatePlayer input p = p
@@ -82,13 +89,19 @@ updatePlayerPos Input{keys=keys} (x,y) = (x',y')
     down = lookupKey keys DownArrow
 
 tileMap :: State -> Map (Int, Int) Tile
-tileMap st = case gameMode st of
-  GameMode'Start -> fromList []
-  GameMode'Play -> mergeTiles clear $ fromList [ ( (x,y), Tile Nothing Nothing (Just wh1) ) ]
-  GameMode'GameOver -> fromList []
+tileMap st = case scene st of
+  Scene'Start -> text "DAY 1" White1 (screenW `div` 2 - 2, screenH `div` 2)
+  Scene'Play -> mergeTiles clear $ fromList [ ( (x,y), Tile Nothing Nothing (Just wh1) ) ]
+  Scene'GameOver -> fromList []
   where
     (x,y) = playerPos (player (playState st))
     clear = clearTileMap (colorFromRoomIndex (playerRoom (player (playState st))))
+
+text :: String -> Color -> (Int, Int) -> Map (Int, Int) Tile
+text s c (x,y) = fromList (line s)
+  where
+    line = zipWith tile [0..]
+    tile u sym = ((x+u, y), Tile (Just (sym, c)) Nothing Nothing)
 
 clearTileMap :: Color -> Map (Int, Int) Tile
 clearTileMap c = fromList
