@@ -21,9 +21,10 @@ data Scene
   deriving (Show, Eq)
 
 data PlayState = PlayState
-  { player :: Player
-  , doors  :: [Door]
-  , walls  :: [(Int,Int)]
+  { player  :: Player
+  , doors   :: [Door]
+  , walls   :: [(Int,Int)]
+  , enemies :: [Enemy] 
   } deriving (Show, Eq)
 
 newtype RoomIndex = RoomIndex Int deriving (Show, Eq, Num)
@@ -35,11 +36,11 @@ data Player = Player
   } deriving (Show, Eq)
 
 data Enemy = Enemy
-  { enemyPos :: (Int,Int)
+  { enemyPos :: (Int, Int)
   , enemyRoom :: RoomIndex
   --, enemyHp :: Int
   , enemyAtk :: Int
-  }
+  } deriving (Show, Eq)
 
 data Door = Door
   { doorNumber :: Int
@@ -70,7 +71,7 @@ centerY = screenH `div` 2
 initState :: State
 initState = State
   { scene = Scene'GameOver
-  , playState = PlayState (Player (0,0) 4 100) ([(Door 1 (3,2))]) ([(1,2), (1,3), (1,4), (1,5), (1,6), (1,7)])
+  , playState = PlayState (Player (0,0) 4 100) ([(Door 1 (3,2))]) ([(1,2), (1,3), (1,4), (1,5), (1,6), (1,7)]) [(Enemy (8, 20) 4 10), (Enemy (15, 32) 4 20)]
   , roomCount = 0
   }
 
