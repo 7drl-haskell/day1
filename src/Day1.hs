@@ -5,6 +5,7 @@ import GridProto.Core
 import Data.Tuple
 import Data.Char (intToDigit)
 import Data.Maybe (fromJust)
+import qualified Data.Map as M
 import qualified Data.Set as S
 
 main :: IO ()
@@ -24,11 +25,11 @@ data Scene
 
 data PlayState = PlayState
   { player :: Player
-  , rooms :: Map RoomIndex Room
+  , rooms :: M.Map RoomIndex Room
   } deriving (Show, Eq)
 
 data Room = Room
-  { doors  :: Map (Int, Int) Int
+  { doors  :: M.Map (Int, Int) Int
   , walls  :: S.Set (Int, Int)
   } deriving (Show, Eq)
 
@@ -80,12 +81,12 @@ initState = State
       , rooms = fromList $
           [ ( 0
             , Room
-                { doors = [(Door 1 (3,2))]
-                , walls = [(1,2), (1,3), (1,4), (1,5), (1,6), (1,7)]
+                { doors = fromList [((3,2), 1), ((10,15), 2)]
+                , walls = S.fromList [(1,2), (1,3), (1,4), (1,5), (1,6), (1,7)]
                 }
             )
           ] ++ 
-          zip [1..9] (repeat $ Room [] [])
+          zip [1..9] (repeat $ Room M.empty S.empty)
       }
   , roomCount = 0
   }
@@ -190,15 +191,17 @@ colorFromRoomIndex (RoomIndex idx) = colors !! (idx `mod` len)
   where
     colors = colorWheel2
     len = length colors
-    
-wallTileMap :: [(Int, Int)] -> Map (Int, Int) Tile
-wallTileMap locs = fromList $ map (swap . (,) (Tile Nothing Nothing (Just bk2))) locs 
+
+wallTileMap :: S.Set (Int,Int) -> Map (Int, Int) Tile
+wallTileMap = fromList . ( map ( swap . (,) ( Tile Nothing Nothing ( Just bk2 ) ) ) ) . S.toList
+-- wallTileMap :: [(Int, Int)] -> Map (Int, Int) Tile
+-- wallTileMap locs = fromList $ map (swap . (,) (Tile Nothing Nothing (Just bk2)) . S.toList) locs 
 
 doorTileMap :: Map (Int, Int) Int -> Map (Int, Int) Tile
-doorTileMap = map intToDoorTile 
+doorTileMap = M.map intToDoorTile 
   where
     intToDoorTile :: Int -> Tile
-    intToDoorTile n = Tile ( Just (n, bk2) ) ( Just (Square, bk2) ) Nothing
+    intToDoorTile n = Tile ( Just (intToDigit n, bk2) ) ( Just (Square, bk2) ) Nothing
 
 dirFromInput :: Input -> Maybe Dir
 dirFromInput Input{keys} 
