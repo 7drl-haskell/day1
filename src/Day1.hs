@@ -110,9 +110,11 @@ update input st
   -- FOR DEUGGING ABOVE
   | otherwise = case scene st of
       Scene'Start -> return $ updateStart input st
+      -- Scene'Play -> return $ st
+      --   { playState = (playState st)
+      --     { player = updatePlayer input (player (playState st)) } }
       Scene'Play -> return $ st
-        { playState = (playState st)
-          { player = updatePlayer input (player (playState st)) } }
+        { playState = updatePlayer input (playState st) }
       Scene'GameOver -> return $ updateGameOver input st
   -- FOR DEBUGGING BELOW
   where
@@ -132,9 +134,22 @@ updateGameOver input st = st
   where
     isStart = lookupKey (keys input) Enter == Pressed || lookupKey (keys input) (Char ' ') == Pressed
 
-updatePlayer :: Input -> Player -> Player
-updatePlayer input p = p
-  { playerPos = updatePlayerPos input (playerPos p) }
+updatePlayer :: Input -> PlayState -> PlayState
+updatePlayer input ps = case S.member nextPos wPos of  
+  True  -> ps
+  False -> ps { player = p { playerPos = updatePlayerPos input (playerPos p) } }
+  where
+    p = player ps
+    currPos = playerPos p
+    nextPos = updatePlayerPos input currPos  
+    roomIndex = playerRoom p
+    room = fromJust $ lookupMap roomIndex (rooms ps)
+    wPos = walls room
+    dPos = undefined  
+
+-- updatePlayer :: Input -> Player -> Player
+-- updatePlayer input p = p
+--   { playerPos = updatePlayerPos input (playerPos p) }
 
 updatePlayerPos :: Input -> (Int, Int) -> (Int, Int)
 updatePlayerPos input (x,y) = (x'+x, y'+y)
