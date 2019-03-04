@@ -29,8 +29,9 @@ data PlayState = PlayState
   } deriving (Show, Eq)
 
 data Room = Room
-  { doors  :: M.Map (Int, Int) Int
-  , walls  :: S.Set (Int, Int)
+  { doors   :: M.Map (Int, Int) Int
+  , walls   :: S.Set (Int, Int)
+  , enemies :: M.Map (Int, Int) Enemy
   } deriving (Show, Eq)
 
 newtype RoomIndex = RoomIndex Int deriving (Show, Eq, Num, Ord, Enum, Bounded)
@@ -39,6 +40,11 @@ data Player = Player
   { playerPos :: (Int, Int)
   , playerRoom :: RoomIndex
   } deriving (Show, Eq)
+
+data Enemy = Enemy 
+  { enemyHp  :: Int
+  , enemyAtk :: Int 
+  }
 
 data Dir
   = U
