@@ -11,6 +11,7 @@ main = runClassic classic
 data State = State
   { scene :: Scene
   , playState :: PlayState
+  , roomCount :: Int
   } deriving (Show, Eq)
 
 data Scene
@@ -42,7 +43,7 @@ classic = Classic
   { title = "Day 1"
   , rows = screenH
   , cols = screenW
-  , tilePixelSize = 24
+  , tilePixelSize = 32
   , backgroundColor = Black2
   , setupFn = return initState
   , updateFn = update
@@ -52,28 +53,36 @@ classic = Classic
   , quitFn = const False
   }
 
-screenW, screenH :: Int
+screenW, screenH, centerX, centerY :: Int
 screenW = 45
 screenH = 30
+centerX = screenW `div` 2
+centerY = screenH `div` 2
 
 initState :: State
 initState = State
-  { scene = Scene'Start
+  { scene = Scene'GameOver
   , playState = PlayState (Player (0,0) 4) ([(Door 1 (3,2))]) ([(1,2), (1,3), (1,4), (1,5), (1,6), (1,7)])
+  , roomCount = 0
   }
 
 update :: Input -> State -> IO State
 update input st = case scene st of
-  Scene'Start -> return $ updateStartScene input st
+  Scene'Start -> return $ updateStart input st
   Scene'Play -> return $ st
     { playState = (playState st)
       { player = updatePlayer input (player (playState st)) } }
-  Scene'GameOver -> return st
+  Scene'GameOver -> return $ updateGameOver input st
 
-updateStartScene :: Input -> State -> State
-updateStartScene input st = st
-  { scene = if isStart then Scene'Play else Scene'Start
-  }
+updateStart :: Input -> State -> State
+updateStart input st = st
+  { scene = if isStart then Scene'Play else Scene'Start }
+  where
+    isStart = lookupKey (keys input) Enter == Pressed || lookupKey (keys input) (Char ' ') == Pressed
+
+updateGameOver :: Input -> State -> State
+updateGameOver input st = st
+  { scene = if isStart then Scene'Start else Scene'GameOver }
   where
     isStart = lookupKey (keys input) Enter == Pressed || lookupKey (keys input) (Char ' ') == Pressed
 
@@ -85,13 +94,20 @@ updatePlayerPos :: Input -> (Int, Int) -> (Int, Int)
 updatePlayerPos Input{keys=keys} (x,y) = (x',y')
   where
     x'
-      | left == Pressed || left == Held = x - 1
-      | right == Pressed || right == Held = x + 1
+      | isLeft && isRight = x
+      | isLeft = x - 1
+      | isRight = x + 1
       | otherwise = x
     y'
-      | up == Pressed || up == Held = y - 1
-      | down == Pressed || down == Held = y + 1
+      | isUp && isDown = y
+      | isUp = y - 1
+      | isDown = y + 1
       | otherwise = y
+    isLeft = touched left
+    isRight = touched right
+    isUp = touched up
+    isDown = touched down
+    touched k = k == Pressed || k == Held
     left = lookupKey keys LeftArrow
     right = lookupKey keys RightArrow
     up = lookupKey keys UpArrow
@@ -99,16 +115,31 @@ updatePlayerPos Input{keys=keys} (x,y) = (x',y')
 
 tileMap :: State -> Map (Int, Int) Tile
 tileMap st = case scene st of
-  Scene'Start -> text "DAY 1" White1 (screenW `div` 2 - 2, screenH `div` 2)
-  Scene'Play -> mergeTiles clear ( mergeTiles ws ( mergeTiles ds playerTile ) )
-  --mergeTiles playerTile ( mergeTiles ds ( mergeTiles ws clear ) )
-  Scene'GameOver -> fromList []
+  Scene'Start -> drawStart st
+  Scene'Play -> drawPlay st
+  Scene'GameOver -> drawGameOver st
+
+drawStart :: State -> Map (Int, Int) Tile
+drawStart st = text "DAY 1" White1 (screenW `div` 2 - 2, screenH `div` 2)
+
+drawPlay :: State -> Map (Int, Int) Tile
+drawPlay st = mergeTiles clear ( mergeTiles ws ( mergeTiles ds playerTile ) )
   where
     (x,y) = playerPos (player (playState st))
     clear = clearTileMap (colorFromRoomIndex (playerRoom (player (playState st))))
     playerTile = fromList [ ( (x,y), Tile Nothing Nothing (Just wh1) ) ]
     ds = doorTileMap $ doors $ playState st
     ws = wallTileMap $ walls $ playState st
+
+drawGameOver :: State -> Map (Int, Int) Tile
+drawGameOver st = mergeTiles
+  (text roomCountText Red0 (roomCountTextX, centerY))
+  (text roomCountValue Red0 (roomCountValueX, centerY + 1))
+  where
+    roomCountText = "Room Count"
+    roomCountTextX = centerX - (length roomCountText) `div` 2
+    roomCountValue = show (roomCount st)
+    roomCountValueX = centerX - (length roomCountValue) `div` 2
 
 text :: String -> Color -> (Int, Int) -> Map (Int, Int) Tile
 text s c (x,y) = fromList (line s)
