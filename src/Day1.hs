@@ -71,7 +71,7 @@ centerY = screenH `div` 2
 initState :: State
 initState = State
   { scene = Scene'GameOver
-  , playState = PlayState (Player (0,0) 4 100) ([(Door 1 (3,2))]) ([(1,2), (1,3), (1,4), (1,5), (1,6), (1,7)]) [(Enemy (8, 20) 4 10), (Enemy (15, 32) 4 20)]
+  , playState = PlayState (Player (0,0) 4 100) ([(Door 1 (3,2))]) ([(1,2), (1,3), (1,4), (1,5), (1,6), (1,7)]) [(Enemy (8, 20) 4 10), (Enemy (15, 12) 4 20)]
   , roomCount = 0
   }
 
@@ -132,11 +132,12 @@ drawStart :: State -> Map (Int, Int) Tile
 drawStart st = text "DAY 1" White1 (screenW `div` 2 - 2, screenH `div` 2)
 
 drawPlay :: State -> Map (Int, Int) Tile
-drawPlay st = mergeTiles clear ( mergeTiles ws ( mergeTiles ds playerTile ) )
+drawPlay st = mergeTiles clear ( mergeTiles ws ( mergeTiles enemyTiles ( mergeTiles ds playerTile ) ) )
   where
     (x,y) = playerPos (player (playState st))
     clear = clearTileMap (colorFromRoomIndex (playerRoom (player (playState st))))
     playerTile = fromList [ ( (x,y), Tile Nothing Nothing (Just wh1) ) ]
+    enemyTiles = enemyTileMap $ enemies $ playState st
     ds = doorTileMap $ doors $ playState st
     ws = wallTileMap $ walls $ playState st
 
@@ -170,7 +171,7 @@ colorFromRoomIndex (RoomIndex idx) = colors !! (idx `mod` len)
     len = length colors
     
 wallTileMap :: [(Int, Int)] -> Map (Int, Int) Tile
-wallTileMap locs = fromList $ map (swap . (,) (Tile Nothing Nothing (Just bk2))) locs 
+wallTileMap locs = fromList $ map ( swap . (,) ( Tile Nothing Nothing ( Just bk2 ) ) ) locs 
 
 doorTileMap :: [Door] -> Map (Int, Int) Tile
 doorTileMap ds = fromList $ map makeDoorTile ds 
@@ -178,3 +179,5 @@ doorTileMap ds = fromList $ map makeDoorTile ds
     makeDoorTile :: Door -> ((Int, Int), Tile)
     makeDoorTile d = (,) (doorLocation d) $ Tile ( Just (intToDigit $ doorNumber d, bk2) ) ( Just (Square, bk2) ) Nothing
 
+enemyTileMap :: [Enemy] -> Map (Int, Int) Tile
+enemyTileMap es = fromList $ map ( swap . (,) ( Tile Nothing Nothing ( Just rd1 ) ) . enemyPos ) es
