@@ -31,6 +31,7 @@ newtype RoomIndex = RoomIndex Int deriving (Show, Eq, Num)
 data Player = Player
   { playerPos :: (Int, Int)
   , playerRoom :: RoomIndex
+  , playerHp :: Int
   } deriving (Show, Eq)
 
 data Door = Door
@@ -62,7 +63,7 @@ centerY = screenH `div` 2
 initState :: State
 initState = State
   { scene = Scene'GameOver
-  , playState = PlayState (Player (0,0) 4) ([(Door 1 (3,2))]) ([(1,2), (1,3), (1,4), (1,5), (1,6), (1,7)])
+  , playState = PlayState (Player (0,0) 4 100) ([(Door 1 (3,2))]) ([(1,2), (1,3), (1,4), (1,5), (1,6), (1,7)])
   , roomCount = 0
   }
 
