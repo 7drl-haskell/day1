@@ -5,6 +5,7 @@ import GridProto.Core
 import Data.Tuple
 import Data.Char (intToDigit)
 import Data.Maybe (fromJust)
+import qualified Data.Set as S
 
 main :: IO ()
 main = runClassic classic
@@ -27,8 +28,8 @@ data PlayState = PlayState
   } deriving (Show, Eq)
 
 data Room = Room
-  { doors  :: [Door]
-  , walls  :: [(Int,Int)]
+  { doors  :: Map (Int, Int) Int
+  , walls  :: S.Set (Int, Int)
   } deriving (Show, Eq)
 
 newtype RoomIndex = RoomIndex Int deriving (Show, Eq, Num, Ord, Enum, Bounded)
@@ -38,10 +39,10 @@ data Player = Player
   , playerRoom :: RoomIndex
   } deriving (Show, Eq)
 
-data Door = Door
-  { doorNumber :: Int
-  , doorLocation :: (Int, Int)
-  } deriving (Show, Eq)
+-- data Door = Door
+--   { doorNumber :: Int
+--   , doorLocation :: (Int, Int)
+--   } deriving (Show, Eq)
 
 data Dir
   = U
@@ -193,11 +194,11 @@ colorFromRoomIndex (RoomIndex idx) = colors !! (idx `mod` len)
 wallTileMap :: [(Int, Int)] -> Map (Int, Int) Tile
 wallTileMap locs = fromList $ map (swap . (,) (Tile Nothing Nothing (Just bk2))) locs 
 
-doorTileMap :: [Door] -> Map (Int, Int) Tile
-doorTileMap ds = fromList $ map makeDoorTile ds 
+doorTileMap :: Map (Int, Int) Int -> Map (Int, Int) Tile
+doorTileMap = map intToDoorTile 
   where
-    makeDoorTile :: Door -> ((Int, Int), Tile)
-    makeDoorTile d = (,) (doorLocation d) $ Tile ( Just (intToDigit $ doorNumber d, bk2) ) ( Just (Square, bk2) ) Nothing
+    intToDoorTile :: Int -> Tile
+    intToDoorTile n = Tile ( Just (n, bk2) ) ( Just (Square, bk2) ) Nothing
 
 dirFromInput :: Input -> Maybe Dir
 dirFromInput Input{keys} 
