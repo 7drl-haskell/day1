@@ -34,6 +34,13 @@ data Player = Player
   , playerHp :: Int
   } deriving (Show, Eq)
 
+data Enemy = Enemy
+  { enemyPos :: (Int,Int)
+  , enemyRoom :: RoomIndex
+  --, enemyHp :: Int
+  , enemyAtk :: Int
+  }
+
 data Door = Door
   { doorNumber :: Int
   , doorLocation :: (Int, Int)
