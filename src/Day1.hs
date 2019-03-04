@@ -44,10 +44,10 @@ data Door = Door
   } deriving (Show, Eq)
 
 data Dir
-  = Up
-  | Down
-  | Left
-  | Right
+  = U
+  | D
+  | L
+  | R
   deriving (Show, Eq)
 
 classic :: Classic State
@@ -132,27 +132,14 @@ updatePlayer input p = p
   { playerPos = updatePlayerPos input (playerPos p) }
 
 updatePlayerPos :: Input -> (Int, Int) -> (Int, Int)
-updatePlayerPos Input{keys=keys} (x,y) = (x',y')
+updatePlayerPos input (x,y) = (x'+x, y'+y)
   where
-    x'
-      | isLeft && isRight = x
-      | isLeft = x - 1
-      | isRight = x + 1
-      | otherwise = x
-    y'
-      | isUp && isDown = y
-      | isUp = y - 1
-      | isDown = y + 1
-      | otherwise = y
-    isLeft = touched left
-    isRight = touched right
-    isUp = touched up
-    isDown = touched down
-    touched k = k == Pressed || k == Held
-    left = lookupKey keys LeftArrow
-    right = lookupKey keys RightArrow
-    up = lookupKey keys UpArrow
-    down = lookupKey keys DownArrow
+    (x',y') = case dirFromInput input of
+      Nothing -> (0,0)
+      Just U -> (0,-1)
+      Just D -> (0,1)
+      Just L -> (-1,0)
+      Just R -> (1,0)
 
 tileMap :: State -> Map (Int, Int) Tile
 tileMap st = case scene st of
@@ -211,4 +198,26 @@ doorTileMap ds = fromList $ map makeDoorTile ds
   where
     makeDoorTile :: Door -> ((Int, Int), Tile)
     makeDoorTile d = (,) (doorLocation d) $ Tile ( Just (intToDigit $ doorNumber d, bk2) ) ( Just (Square, bk2) ) Nothing
+
+dirFromInput :: Input -> Maybe Dir
+dirFromInput Input{keys} 
+    | (isLeft || isRight) && (isUp || isDown) = Nothing
+    | isLeft && isRight = Nothing
+    | isUp && isDown = Nothing
+    | isLeft = Just L
+    | isRight = Just R
+    | isUp = Just U
+    | isDown = Just D
+    | otherwise = Nothing
+  where
+    isLeft = touched left
+    isRight = touched right
+    isUp = touched up
+    isDown = touched down
+    touched k = k == Pressed || k == Held
+    left = lookupKey keys LeftArrow
+    right = lookupKey keys RightArrow
+    up = lookupKey keys UpArrow
+    down = lookupKey keys DownArrow
+
 
