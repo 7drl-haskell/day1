@@ -39,6 +39,7 @@ newtype RoomIndex = RoomIndex Int deriving (Show, Eq, Num, Ord, Enum, Bounded)
 data Player = Player
   { playerPos :: (Int, Int)
   , playerRoom :: RoomIndex
+  , playerHp :: Int
   } deriving (Show, Eq)
 
 data Enemy = Enemy 
@@ -78,7 +79,7 @@ initState :: State
 initState = State
   { scene = Scene'Start
   , playState = PlayState
-      { player = Player (0,0) 4
+      { player = Player (0,0) 4 100
       , rooms = fromList $
           [ ( 0
             , Room
