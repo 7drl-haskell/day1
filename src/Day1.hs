@@ -5,7 +5,6 @@ import GridProto.Core
 import Data.Tuple
 import Data.Char (intToDigit)
 import Data.Maybe (fromJust)
-import qualified Data.Map as M
 import qualified Data.Set as S
 
 main :: IO ()
@@ -25,13 +24,13 @@ data Scene
 
 data PlayState = PlayState
   { player :: Player
-  , rooms :: M.Map RoomIndex Room
+  , rooms :: Map RoomIndex Room
   } deriving (Show, Eq)
 
 data Room = Room
-  { doors   :: M.Map (Int, Int) Int
+  { doors   :: Map (Int, Int) Int
   , walls   :: S.Set (Int, Int)
-  , enemies :: M.Map (Int, Int) Enemy
+  , enemies :: Map (Int, Int) Enemy
   } deriving (Show, Eq)
 
 newtype RoomIndex = RoomIndex Int deriving (Show, Eq, Num, Ord, Enum, Bounded)
@@ -83,13 +82,13 @@ initState = State
       , rooms = fromList $
           [ ( 0
             , Room
-                { doors   = M.fromList [ ( (3,2), 1 ), ( (10,15), 2 ) ]
+                { doors   = fromList [ ( (3,2), 1 ), ( (10,15), 2 ) ]
                 , walls   = S.fromList [ (1,2), (1,3), (1,4), (1,5), (1,6), (1,7) ]
-                , enemies = M.fromList [ ( (12, 16), (Enemy 100 10) ), ( (7, 21), (Enemy 100 10) )  ]
+                , enemies = fromList [ ( (12, 16), (Enemy 100 10) ), ( (7, 21), (Enemy 100 10) )  ]
                 }
             )
           ] ++ 
-          zip [1..9] (repeat $ Room M.empty S.empty M.empty)
+          zip [1..9] (repeat $ Room mempty S.empty mempty)
       }
   , roomCount = 0
   }
@@ -110,11 +109,7 @@ update input st
   -- FOR DEUGGING ABOVE
   | otherwise = case scene st of
       Scene'Start -> return $ updateStart input st
-      -- Scene'Play -> return $ st
-      --   { playState = (playState st)
-      --     { player = updatePlayer input (player (playState st)) } }
-      Scene'Play -> return $ st
-        { playState = updatePlayer input (playState st) }
+      Scene'Play -> return $ st { playState = updatePlayState input (playState st) }
       Scene'GameOver -> return $ updateGameOver input st
   -- FOR DEBUGGING BELOW
   where
@@ -134,8 +129,8 @@ updateGameOver input st = st
   where
     isStart = lookupKey (keys input) Enter == Pressed || lookupKey (keys input) (Char ' ') == Pressed
 
-updatePlayer :: Input -> PlayState -> PlayState
-updatePlayer input ps = case S.member nextPos wPos of  
+updatePlayState :: Input -> PlayState -> PlayState
+updatePlayState input ps = case S.member nextPos wPos of  
   True  -> ps
   False -> ps { player = p { playerPos = updatePlayerPos input (playerPos p) } }
   where
@@ -145,11 +140,6 @@ updatePlayer input ps = case S.member nextPos wPos of
     roomIndex = playerRoom p
     room = fromJust $ lookupMap roomIndex (rooms ps)
     wPos = walls room
-    dPos = undefined  
-
--- updatePlayer :: Input -> Player -> Player
--- updatePlayer input p = p
---   { playerPos = updatePlayerPos input (playerPos p) }
 
 updatePlayerPos :: Input -> (Int, Int) -> (Int, Int)
 updatePlayerPos input (x,y) = (x'+x, y'+y)
@@ -215,13 +205,13 @@ wallTileMap :: S.Set (Int,Int) -> Map (Int, Int) Tile
 wallTileMap = fromList . ( map ( swap . (,) ( Tile Nothing Nothing ( Just bk2 ) ) ) ) . S.toList 
 
 doorTileMap :: Map (Int, Int) Int -> Map (Int, Int) Tile
-doorTileMap = M.map intToDoorTile 
+doorTileMap = fmap intToDoorTile 
   where
     intToDoorTile :: Int -> Tile
     intToDoorTile n = Tile ( Just (intToDigit n, bk2) ) ( Just (Square, bk2) ) Nothing
 
 enemyTileMap :: Map (Int, Int) Enemy -> Map (Int, Int) Tile
-enemyTileMap = M.map enemyToTile
+enemyTileMap = fmap enemyToTile
   where 
     enemyToTile :: Enemy -> Tile
     enemyToTile e = Tile Nothing Nothing (Just cn2) -- Enemy color to Cyan 3 for debugging
