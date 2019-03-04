@@ -3,7 +3,8 @@ module Day1 where
 import GridProto.Classic
 import GridProto.Core
 import Data.Tuple
-import Data.Char
+import Data.Char (intToDigit)
+import Data.Maybe (fromJust)
 
 main :: IO ()
 main = runClassic classic
@@ -22,11 +23,15 @@ data Scene
 
 data PlayState = PlayState
   { player :: Player
-  , doors  :: [Door]
+  , rooms :: Map RoomIndex Room
+  } deriving (Show, Eq)
+
+data Room = Room
+  { doors  :: [Door]
   , walls  :: [(Int,Int)]
   } deriving (Show, Eq)
 
-newtype RoomIndex = RoomIndex Int deriving (Show, Eq, Num)
+newtype RoomIndex = RoomIndex Int deriving (Show, Eq, Num, Ord, Enum, Bounded)
 
 data Player = Player
   { playerPos :: (Int, Int)
@@ -37,6 +42,13 @@ data Door = Door
   { doorNumber :: Int
   , doorLocation :: (Int, Int)
   } deriving (Show, Eq)
+
+data Dir
+  = Up
+  | Down
+  | Left
+  | Right
+  deriving (Show, Eq)
 
 classic :: Classic State
 classic = Classic
@@ -62,17 +74,46 @@ centerY = screenH `div` 2
 initState :: State
 initState = State
   { scene = Scene'GameOver
-  , playState = PlayState (Player (0,0) 4) ([(Door 1 (3,2))]) ([(1,2), (1,3), (1,4), (1,5), (1,6), (1,7)])
+  , playState = PlayState
+      { player = Player (0,0) 2
+      , rooms = fromList $
+          [ ( 0
+            , Room
+                { doors = [(Door 1 (3,2))]
+                , walls = [(1,2), (1,3), (1,4), (1,5), (1,6), (1,7)]
+                }
+            )
+          ] ++ 
+          zip [1..9] (repeat $ Room [] [])
+      }
   , roomCount = 0
   }
 
 update :: Input -> State -> IO State
-update input st = case scene st of
-  Scene'Start -> return $ updateStart input st
-  Scene'Play -> return $ st
-    { playState = (playState st)
-      { player = updatePlayer input (player (playState st)) } }
-  Scene'GameOver -> return $ updateGameOver input st
+update input st
+  -- FOR DEBUGGING BELOW
+  | pressed 0 = nextRoom 0
+  | pressed 1 = nextRoom 1
+  | pressed 2 = nextRoom 2
+  | pressed 3 = nextRoom 2
+  | pressed 4 = nextRoom 5
+  | pressed 5 = nextRoom 4
+  | pressed 6 = nextRoom 6
+  | pressed 7 = nextRoom 7
+  | pressed 8 = nextRoom 8
+  | pressed 9 = nextRoom 9
+  -- FOR DEUGGING ABOVE
+  | otherwise = case scene st of
+      Scene'Start -> return $ updateStart input st
+      Scene'Play -> return $ st
+        { playState = (playState st)
+          { player = updatePlayer input (player (playState st)) } }
+      Scene'GameOver -> return $ updateGameOver input st
+  -- FOR DEBUGGING BELOW
+  where
+    pressed n = lookupKey (keys input) (Char (head $ show n)) == Pressed
+    nextRoom n = return $ st { playState = (playState st) { player = (player (playState st)) { playerRoom = n } } }
+  -- FOR DEBUGGING ABOVE
 
 updateStart :: Input -> State -> State
 updateStart input st = st
@@ -128,8 +169,10 @@ drawPlay st = mergeTiles clear ( mergeTiles ws ( mergeTiles ds playerTile ) )
     (x,y) = playerPos (player (playState st))
     clear = clearTileMap (colorFromRoomIndex (playerRoom (player (playState st))))
     playerTile = fromList [ ( (x,y), Tile Nothing Nothing (Just wh1) ) ]
-    ds = doorTileMap $ doors $ playState st
-    ws = wallTileMap $ walls $ playState st
+    roomIndex = playerRoom (player (playState st))
+    room = fromJust $ lookupMap roomIndex (rooms (playState st))
+    ds = doorTileMap $ doors room
+    ws = wallTileMap $ walls room
 
 drawGameOver :: State -> Map (Int, Int) Tile
 drawGameOver st = mergeTiles
