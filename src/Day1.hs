@@ -44,7 +44,7 @@ data Player = Player
 data Enemy = Enemy 
   { enemyHp  :: Int
   , enemyAtk :: Int 
-  }
+  } deriving (Show, Eq)
 
 data Dir
   = U
@@ -78,16 +78,17 @@ initState :: State
 initState = State
   { scene = Scene'Start
   , playState = PlayState
-      { player = Player (0,0) 2
+      { player = Player (0,0) 4
       , rooms = fromList $
           [ ( 0
             , Room
-                { doors = fromList [((3,2), 1), ((10,15), 2)]
-                , walls = S.fromList [(1,2), (1,3), (1,4), (1,5), (1,6), (1,7)]
+                { doors   = M.fromList [ ( (3,2), 1 ), ( (10,15), 2 ) ]
+                , walls   = S.fromList [ (1,2), (1,3), (1,4), (1,5), (1,6), (1,7) ]
+                , enemies = M.fromList [ ( (12, 16), (Enemy 100 10) ), ( (7, 21), (Enemy 100 10) )  ]
                 }
             )
           ] ++ 
-          zip [1..9] (repeat $ Room M.empty S.empty)
+          zip [1..9] (repeat $ Room M.empty S.empty M.empty)
       }
   , roomCount = 0
   }
@@ -154,7 +155,7 @@ drawStart :: State -> Map (Int, Int) Tile
 drawStart st = text "DAY 1" White1 (screenW `div` 2 - 2, screenH `div` 2)
 
 drawPlay :: State -> Map (Int, Int) Tile
-drawPlay st = mergeTiles clear ( mergeTiles ws ( mergeTiles ds playerTile ) )
+drawPlay st = mergeTiles clear ( mergeTiles ws ( mergeTiles ds ( mergeTiles es playerTile ) ) )
   where
     (x,y) = playerPos (player (playState st))
     clear = clearTileMap (colorFromRoomIndex (playerRoom (player (playState st))))
@@ -163,6 +164,7 @@ drawPlay st = mergeTiles clear ( mergeTiles ws ( mergeTiles ds playerTile ) )
     room = fromJust $ lookupMap roomIndex (rooms (playState st))
     ds = doorTileMap $ doors room
     ws = wallTileMap $ walls room
+    es = enemyTileMap $ enemies room
 
 drawGameOver :: State -> Map (Int, Int) Tile
 drawGameOver st = mergeTiles
@@ -201,6 +203,12 @@ doorTileMap = M.map intToDoorTile
   where
     intToDoorTile :: Int -> Tile
     intToDoorTile n = Tile ( Just (intToDigit n, bk2) ) ( Just (Square, bk2) ) Nothing
+
+enemyTileMap :: Map (Int, Int) Enemy -> Map (Int, Int) Tile
+enemyTileMap = M.map enemyToTile
+  where 
+    enemyToTile :: Enemy -> Tile
+    enemyToTile e = Tile Nothing Nothing (Just cn2) -- Enemy color to Cyan 3 for debugging
 
 dirFromInput :: Input -> Maybe Dir
 dirFromInput Input{keys} 
