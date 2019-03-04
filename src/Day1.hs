@@ -40,11 +40,6 @@ data Player = Player
   , playerRoom :: RoomIndex
   } deriving (Show, Eq)
 
--- data Door = Door
---   { doorNumber :: Int
---   , doorLocation :: (Int, Int)
---   } deriving (Show, Eq)
-
 data Dir
   = U
   | D
@@ -193,9 +188,7 @@ colorFromRoomIndex (RoomIndex idx) = colors !! (idx `mod` len)
     len = length colors
 
 wallTileMap :: S.Set (Int,Int) -> Map (Int, Int) Tile
-wallTileMap = fromList . ( map ( swap . (,) ( Tile Nothing Nothing ( Just bk2 ) ) ) ) . S.toList
--- wallTileMap :: [(Int, Int)] -> Map (Int, Int) Tile
--- wallTileMap locs = fromList $ map (swap . (,) (Tile Nothing Nothing (Just bk2)) . S.toList) locs 
+wallTileMap = fromList . ( map ( swap . (,) ( Tile Nothing Nothing ( Just bk2 ) ) ) ) . S.toList 
 
 doorTileMap :: Map (Int, Int) Int -> Map (Int, Int) Tile
 doorTileMap = M.map intToDoorTile 
