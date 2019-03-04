@@ -73,7 +73,7 @@ centerY = screenH `div` 2
 
 initState :: State
 initState = State
-  { scene = Scene'GameOver
+  { scene = Scene'Start
   , playState = PlayState
       { player = Player (0,0) 2
       , rooms = fromList $
