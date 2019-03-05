@@ -113,7 +113,7 @@ update input st
   -- FOR DEUGGING ABOVE
   | otherwise = case scene st of
       Scene'Start -> return $ updateStart input st
-      Scene'Play -> if hp <= 0 then return $ st { scene = Scene'GameOver } else return $ st { playState = updatePlayerHp $ updatePlayState input (playState st) }
+      Scene'Play -> return $ if hp <= 0 then st { scene = Scene'GameOver } else st { playState = updatePlayerHp $ updatePlayState input (playState st) }
       Scene'GameOver -> return $ updateGameOver input st
   -- FOR DEBUGGING BELOW
   where
