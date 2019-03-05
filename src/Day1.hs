@@ -47,8 +47,7 @@ data Door = Door
   } deriving (Show, Eq)
 
 data Enemy = Enemy 
-  { enemyHp  :: Int
-  , enemyAtk :: Int 
+  { enemyAtk :: Int 
   } deriving (Show, Eq)
 
 data Dir
@@ -89,7 +88,7 @@ initState = State
             , Room
                 { doors   = fromList [ ( (3,2), Door 1 ), ( (10,15), Door 2 ) ]
                 , walls   = S.fromList [ (1,2), (1,3), (1,4), (1,5), (1,6), (1,7) ]
-                , enemies = fromList [ ( (12, 16), (Enemy 100 10) ), ( (7, 21), (Enemy 100 10) )  ]
+                , enemies = fromList [ ( (12, 16), (Enemy 10) ), ( (7, 21), (Enemy 10) )  ]
                 }
             )
           ] ++ 
