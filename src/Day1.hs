@@ -4,7 +4,7 @@ import GridProto.Classic
 import GridProto.Core
 import Data.Tuple
 import Data.Char (intToDigit)
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, isJust)
 import qualified Data.Set as S
 
 main :: IO ()
@@ -78,7 +78,7 @@ initState :: State
 initState = State
   { scene = Scene'Start
   , playState = PlayState
-      { player = Player (0,0) 4 100
+      { player = Player (0,0) 0 100
       , rooms = fromList $
           [ ( 0
             , Room
@@ -130,16 +130,21 @@ updateGameOver input st = st
     isStart = lookupKey (keys input) Enter == Pressed || lookupKey (keys input) (Char ' ') == Pressed
 
 updatePlayState :: Input -> PlayState -> PlayState
-updatePlayState input ps = case S.member nextPos wPos of  
-  True  -> ps
-  False -> ps { player = p { playerPos = updatePlayerPos input (playerPos p) } }
+updatePlayState input pState
+  | S.member nextPos ws = pState
+  | isJust $ lookupMap currPos ds = case lookupMap currPos ds of
+                                      Just x  -> nextRoom $ toEnum x
+                                      Nothing -> pState  
+  | otherwise = pState { player = p { playerPos = updatePlayerPos input (playerPos p) } }
   where
-    p = player ps
-    currPos = playerPos p
+    p = player pState
+    currPos = playerPos p 
     nextPos = updatePlayerPos input currPos  
     roomIndex = playerRoom p
-    room = fromJust $ lookupMap roomIndex (rooms ps)
-    wPos = walls room
+    room = fromJust $ lookupMap roomIndex (rooms pState)
+    ws = walls room
+    ds = doors room
+    nextRoom n = pState { player = ( player (pState) ) { playerRoom = n } }
 
 updatePlayerPos :: Input -> (Int, Int) -> (Int, Int)
 updatePlayerPos input (x,y) = (x'+x, y'+y)
@@ -214,7 +219,7 @@ enemyTileMap :: Map (Int, Int) Enemy -> Map (Int, Int) Tile
 enemyTileMap = fmap enemyToTile
   where 
     enemyToTile :: Enemy -> Tile
-    enemyToTile e = Tile Nothing Nothing (Just cn2) -- Enemy color to Cyan 3 for debugging
+    enemyToTile e = Tile Nothing Nothing (Just rd1) 
 
 dirFromInput :: Input -> Maybe Dir
 dirFromInput Input{keys} 
