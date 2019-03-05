@@ -82,7 +82,7 @@ initState :: State
 initState = State
   { scene = Scene'Start
   , playState = PlayState
-      { player = Player (0,0) 0 100
+      { player = Player (0,0) 0 20
       , rooms = fromList $
           [ ( 0
             , Room
@@ -113,12 +113,13 @@ update input st
   -- FOR DEUGGING ABOVE
   | otherwise = case scene st of
       Scene'Start -> return $ updateStart input st
-      Scene'Play -> return $ st { playState = updatePlayState input (playState st) }
+      Scene'Play -> if hp <= 0 then return $ st { scene = Scene'GameOver } else return $ st { playState = updatePlayerHp $ updatePlayState input (playState st) }
       Scene'GameOver -> return $ updateGameOver input st
   -- FOR DEBUGGING BELOW
   where
     pressed n = lookupKey (keys input) (Char (head $ show n)) == Pressed
     nextRoom n = return $ st { playState = (playState st) { player = (player (playState st)) { playerRoom = n } } }
+    hp = playerHp $ player $ playState st 
   -- FOR DEBUGGING ABOVE
 
 updateStart :: Input -> State -> State
@@ -128,8 +129,7 @@ updateStart input st = st
     isStart = lookupKey (keys input) Enter == Pressed || lookupKey (keys input) (Char ' ') == Pressed
 
 updateGameOver :: Input -> State -> State
-updateGameOver input st = st
-  { scene = if isStart then Scene'Start else Scene'GameOver }
+updateGameOver input st = if isStart then initState else st { scene = Scene'GameOver }
   where
     isStart = lookupKey (keys input) Enter == Pressed || lookupKey (keys input) (Char ' ') == Pressed
 
