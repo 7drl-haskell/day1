@@ -78,7 +78,7 @@ initState :: State
 initState = State
   { scene = Scene'Start
   , playState = PlayState
-      { player = Player (0,0) 4 100
+      { player = Player (0,0) 0 100
       , rooms = fromList $
           [ ( 0
             , Room
@@ -214,7 +214,7 @@ enemyTileMap :: Map (Int, Int) Enemy -> Map (Int, Int) Tile
 enemyTileMap = fmap enemyToTile
   where 
     enemyToTile :: Enemy -> Tile
-    enemyToTile e = Tile Nothing Nothing (Just cn2) -- Enemy color to Cyan 3 for debugging
+    enemyToTile e = Tile Nothing Nothing (Just rd1) -- Enemy color to Cyan 3 for debugging
 
 dirFromInput :: Input -> Maybe Dir
 dirFromInput Input{keys} 
