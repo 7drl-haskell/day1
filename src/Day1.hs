@@ -154,8 +154,8 @@ updatePlayerPos input (x,y) = (inX $ x' + x, inY $ y' + y)
       Just D -> (0,1)
       Just L -> (-1,0)
       Just R -> (1,0)
-    inX = min screenW . max 0
-    inY = min screenH . max 0
+    inX = min (pred screenW) . max 0
+    inY = min (pred screenH) . max 0
 
 tileMap :: State -> Map (Int, Int) Tile
 tileMap st = case scene st of
