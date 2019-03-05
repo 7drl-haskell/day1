@@ -132,13 +132,12 @@ updateGameOver input st = st
 updatePlayState :: Input -> PlayState -> PlayState
 updatePlayState input pState
   | S.member nextPos ws = pState
-  | isJust $ lookupMap currPos ds = case lookupMap currPos ds of
-                                      Just x  -> nextRoom $ toEnum x
-                                      Nothing -> pState  
-  | otherwise = pState { player = p { playerPos = updatePlayerPos input (playerPos p) } }
+  | otherwise = case lookupMap currPos ds of
+      Just x  -> nextRoom $ toEnum x
+      Nothing -> pState { player = p { playerPos = updatePlayerPos input (playerPos p) } }
   where
     p = player pState
-    currPos = playerPos p 
+    currPos = playerPos p
     nextPos = updatePlayerPos input currPos  
     roomIndex = playerRoom p
     room = fromJust $ lookupMap roomIndex (rooms pState)
@@ -241,5 +240,4 @@ dirFromInput Input{keys}
     right = lookupKey keys RightArrow
     up = lookupKey keys UpArrow
     down = lookupKey keys DownArrow
-
 
