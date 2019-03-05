@@ -133,11 +133,22 @@ updateGameOver input st = st
   where
     isStart = lookupKey (keys input) Enter == Pressed || lookupKey (keys input) (Char ' ') == Pressed
 
+updatePlayerHp :: PlayState -> PlayState
+updatePlayerHp pState = case lookupMap currPos es of
+  Just Enemy{enemyAtk} -> pState { player = p { playerHp = ( playerHp p ) - enemyAtk } }
+  Nothing -> pState
+  where
+    p = player pState
+    currPos = playerPos p
+    roomIndex = playerRoom p
+    room = fromJust $ lookupMap roomIndex (rooms pState)
+    es = enemies room
+
 updatePlayState :: Input -> PlayState -> PlayState
 updatePlayState input pState
   | S.member nextPos ws = pState
   | otherwise = case lookupMap currPos ds of
-      Just Door{doorToRoom}  -> nextRoom . toEnum $ unRoomIndex doorToRoom
+      Just Door{doorToRoom} -> nextRoom . toEnum $ unRoomIndex doorToRoom
       Nothing -> pState { player = p { playerPos = updatePlayerPos input (playerPos p) } }
   where
     p = player pState
