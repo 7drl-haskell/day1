@@ -28,17 +28,22 @@ data PlayState = PlayState
   } deriving (Show, Eq)
 
 data Room = Room
-  { doors   :: Map (Int, Int) Int
+  { doors   :: Map (Int, Int) Door
   , walls   :: S.Set (Int, Int)
   , enemies :: Map (Int, Int) Enemy
   } deriving (Show, Eq)
 
-newtype RoomIndex = RoomIndex Int deriving (Show, Eq, Num, Ord, Enum, Bounded)
+newtype RoomIndex = RoomIndex { unRoomIndex :: Int }
+  deriving (Show, Eq, Num, Ord, Enum, Bounded)
 
 data Player = Player
   { playerPos :: (Int, Int)
   , playerRoom :: RoomIndex
   , playerHp :: Int
+  } deriving (Show, Eq)
+
+data Door = Door
+  { doorToRoom :: RoomIndex
   } deriving (Show, Eq)
 
 data Enemy = Enemy 
@@ -82,7 +87,7 @@ initState = State
       , rooms = fromList $
           [ ( 0
             , Room
-                { doors   = fromList [ ( (3,2), 1 ), ( (10,15), 2 ) ]
+                { doors   = fromList [ ( (3,2), Door 1 ), ( (10,15), Door 2 ) ]
                 , walls   = S.fromList [ (1,2), (1,3), (1,4), (1,5), (1,6), (1,7) ]
                 , enemies = fromList [ ( (12, 16), (Enemy 100 10) ), ( (7, 21), (Enemy 100 10) )  ]
                 }
@@ -133,7 +138,7 @@ updatePlayState :: Input -> PlayState -> PlayState
 updatePlayState input pState
   | S.member nextPos ws = pState
   | otherwise = case lookupMap currPos ds of
-      Just x  -> nextRoom $ toEnum x
+      Just Door{doorToRoom}  -> nextRoom . toEnum $ unRoomIndex doorToRoom
       Nothing -> pState { player = p { playerPos = updatePlayerPos input (playerPos p) } }
   where
     p = player pState
@@ -210,11 +215,14 @@ colorFromRoomIndex (RoomIndex idx) = colors !! (idx `mod` len)
 wallTileMap :: S.Set (Int,Int) -> Map (Int, Int) Tile
 wallTileMap = fromList . ( map ( swap . (,) ( Tile Nothing Nothing ( Just bk2 ) ) ) ) . S.toList 
 
-doorTileMap :: Map (Int, Int) Int -> Map (Int, Int) Tile
+doorTileMap :: Map (Int, Int) Door -> Map (Int, Int) Tile
 doorTileMap = fmap intToDoorTile 
   where
-    intToDoorTile :: Int -> Tile
-    intToDoorTile n = Tile ( Just (intToDigit n, bk2) ) ( Just (Square, bk2) ) Nothing
+    intToDoorTile :: Door -> Tile
+    intToDoorTile Door{doorToRoom} = Tile
+      (Just (intToDigit $ unRoomIndex doorToRoom, bk2))
+      (Just (Square, bk2))
+      (Just $ colorFromRoomIndex doorToRoom)
 
 enemyTileMap :: Map (Int, Int) Enemy -> Map (Int, Int) Tile
 enemyTileMap = fmap enemyToTile
