@@ -146,7 +146,7 @@ updatePlayState input pState
     nextRoom n = pState { player = ( player (pState) ) { playerRoom = n } }
 
 updatePlayerPos :: Input -> (Int, Int) -> (Int, Int)
-updatePlayerPos input (x,y) = (x'+x, y'+y)
+updatePlayerPos input (x,y) = (inX $ x' + x, inY $ y' + y)
   where
     (x',y') = case dirFromInput input of
       Nothing -> (0,0)
@@ -154,6 +154,8 @@ updatePlayerPos input (x,y) = (x'+x, y'+y)
       Just D -> (0,1)
       Just L -> (-1,0)
       Just R -> (1,0)
+    inX = min screenW . max 0
+    inY = min screenH . max 0
 
 tileMap :: State -> Map (Int, Int) Tile
 tileMap st = case scene st of
