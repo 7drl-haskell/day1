@@ -14,7 +14,6 @@ main = runClassic classic
 data State = State
   { scene :: Scene
   , playState :: PlayState
-  --, roomCount :: Int
   } deriving (Show, Eq)
 
 data Scene
