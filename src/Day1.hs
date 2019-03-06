@@ -14,7 +14,7 @@ main = runClassic classic
 data State = State
   { scene :: Scene
   , playState :: PlayState
-  , roomCount :: Int
+  --, roomCount :: Int
   } deriving (Show, Eq)
 
 data Scene
@@ -26,6 +26,7 @@ data Scene
 data PlayState = PlayState
   { player :: Player
   , rooms :: Map RoomIndex Room
+  , roomCount :: Int
   } deriving (Show, Eq)
 
 data Room = Room
@@ -94,8 +95,8 @@ initState = State
             )
           ] ++ 
           zip [1..9] (repeat $ Room mempty S.empty mempty)
+      , roomCount = 0
       }
-  , roomCount = 0
   }
 
 update :: Input -> State -> IO State
@@ -159,7 +160,7 @@ updatePlayState input pState
     room = fromJust $ lookupMap roomIndex (rooms pState)
     ws = walls room
     ds = doors room
-    nextRoom n = pState { player = ( player (pState) ) { playerRoom = n } }
+    nextRoom n = pState { player = ( player pState ) { playerRoom = n }, roomCount = ( roomCount pState + 1 )  }
 
 updatePlayerPos :: Input -> (Int, Int) -> (Int, Int)
 updatePlayerPos input (x,y) = (inX $ x' + x, inY $ y' + y)
@@ -201,7 +202,7 @@ drawGameOver st = mergeTiles
   where
     roomCountText = "Room Count"
     roomCountTextX = centerX - (length roomCountText) `div` 2
-    roomCountValue = show (roomCount st)
+    roomCountValue = show (roomCount $ playState st)
     roomCountValueX = centerX - (length roomCountValue) `div` 2
 
 text :: String -> Color -> (Int, Int) -> Map (Int, Int) Tile
