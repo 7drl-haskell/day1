@@ -275,7 +275,6 @@ randomDoors :: IO (Map (Int,Int) Door)
 randomDoors = fromList <$> (sequence $ replicate 3 $ (,) <$> randomLocation <*> (Door <$> randomRIO roomRange))
   where
     roomRange = (0,9)
-    rooms = [0..9]
 
 randomLocation :: IO (Int, Int)
 randomLocation = (,) <$> randomRIO (0,pred screenW) <*> randomRIO (0,pred screenH)
