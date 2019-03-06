@@ -1,11 +1,12 @@
 module Day1 where
 
-import GridProto.Classic
-import GridProto.Core
+import qualified Data.Set as S
 import Data.Tuple
 import Data.Char (intToDigit)
 import Data.Maybe (fromJust, isJust)
-import qualified Data.Set as S
+import GridProto.Classic
+import GridProto.Core
+import System.Random (randomIO, randomRIO, Random)
 
 main :: IO ()
 main = runClassic classic
@@ -34,7 +35,7 @@ data Room = Room
   } deriving (Show, Eq)
 
 newtype RoomIndex = RoomIndex { unRoomIndex :: Int }
-  deriving (Show, Eq, Num, Ord, Enum, Bounded)
+  deriving (Show, Eq, Num, Ord, Enum, Bounded, Random)
 
 data Player = Player
   { playerPos :: (Int, Int)
@@ -64,7 +65,7 @@ classic = Classic
   , cols = screenW
   , tilePixelSize = 32
   , backgroundColor = Black2
-  , setupFn = return initState
+  , setupFn = generateInitState
   , updateFn = update
   , cleanupFn = const (return ())
   , tileMapFn = tileMap
@@ -223,7 +224,7 @@ colorFromRoomIndex (RoomIndex idx) = colors !! (idx `mod` len)
     len = length colors
 
 wallTileMap :: S.Set (Int,Int) -> Map (Int, Int) Tile
-wallTileMap = fromList . ( map ( swap . (,) ( Tile Nothing Nothing ( Just bk2 ) ) ) ) . S.toList 
+wallTileMap = fromList . (map ((,Tile Nothing Nothing (Just bk2)))) . S.toList 
 
 doorTileMap :: Map (Int, Int) Door -> Map (Int, Int) Tile
 doorTileMap = fmap intToDoorTile 
@@ -261,3 +262,28 @@ dirFromInput Input{keys}
     up = lookupKey keys UpArrow
     down = lookupKey keys DownArrow
 
+generateInitState :: IO State
+generateInitState = generateRooms >>= \rs -> return initState { playState = (playState initState) { rooms = rs } }
+
+generateRooms :: IO (Map RoomIndex Room)
+generateRooms = fromList <$> mapM (\r -> (r,) <$> (Room <$> randomDoors <*> randomWalls <*> randomEnemies)) rooms
+  where
+    roomRange = (0,9)
+    rooms = [0..9]
+
+randomDoors :: IO (Map (Int,Int) Door)
+randomDoors = fromList <$> (sequence $ replicate 3 $ (,) <$> randomLocation <*> (Door <$> randomRIO roomRange))
+  where
+    roomRange = (0,9)
+    rooms = [0..9]
+
+randomLocation :: IO (Int, Int)
+randomLocation = (,) <$> randomRIO (0,pred screenW) <*> randomRIO (0,pred screenH)
+
+randomWalls :: IO (S.Set (Int, Int))
+randomWalls = S.fromList <$> sequence (replicate ((screenW * screenH) `div` 8) randomLocation)
+
+randomEnemies :: IO (Map (Int, Int) Enemy)
+randomEnemies = fromList <$> sequence [randomEnemy, randomEnemy, randomEnemy]
+  where
+    randomEnemy = (,) <$> randomLocation <*> (Enemy 1 <$> randomRIO (1,3))

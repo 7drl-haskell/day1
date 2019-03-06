@@ -23,6 +23,7 @@ dependencies:
 default-extensions:
   - GeneralizedNewtypeDeriving
   - NamedFieldPuns
+  - TupleSections
 
 library:
   source-dirs: src
