@@ -115,7 +115,7 @@ update input st
   | otherwise = case scene st of
       Scene'Start -> return $ updateStart input st
       Scene'Play -> return $ if hp <= 0 then st { scene = Scene'GameOver } else st { playState = updatePlayerHp $ updatePlayState input (playState st) }
-      Scene'GameOver -> return $ updateGameOver input st
+      Scene'GameOver -> updateGameOver input st
   -- FOR DEBUGGING BELOW
   where
     pressed n = lookupKey (keys input) (Char (head $ show n)) == Pressed
@@ -129,8 +129,8 @@ updateStart input st = st
   where
     isStart = lookupKey (keys input) Enter == Pressed || lookupKey (keys input) (Char ' ') == Pressed
 
-updateGameOver :: Input -> State -> State
-updateGameOver input st = if isStart then initState else st { scene = Scene'GameOver }
+updateGameOver :: Input -> State -> IO State
+updateGameOver input st = if isStart then generateInitState else return $ st { scene = Scene'GameOver }
   where
     isStart = lookupKey (keys input) Enter == Pressed || lookupKey (keys input) (Char ' ') == Pressed
 
