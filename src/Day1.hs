@@ -47,8 +47,7 @@ data Door = Door
   } deriving (Show, Eq)
 
 data Enemy = Enemy 
-  { enemyHp  :: Int
-  , enemyAtk :: Int 
+  { enemyAtk :: Int 
   } deriving (Show, Eq)
 
 data Dir
@@ -83,13 +82,13 @@ initState :: State
 initState = State
   { scene = Scene'Start
   , playState = PlayState
-      { player = Player (0,0) 0 100
+      { player = Player (0,0) 0 20
       , rooms = fromList $
           [ ( 0
             , Room
                 { doors   = fromList [ ( (3,2), Door 1 ), ( (10,15), Door 2 ) ]
                 , walls   = S.fromList [ (1,2), (1,3), (1,4), (1,5), (1,6), (1,7) ]
-                , enemies = fromList [ ( (12, 16), (Enemy 100 10) ), ( (7, 21), (Enemy 100 10) )  ]
+                , enemies = fromList [ ( (12, 16), (Enemy 10) ), ( (7, 21), (Enemy 10) )  ]
                 }
             )
           ] ++ 
@@ -114,12 +113,13 @@ update input st
   -- FOR DEUGGING ABOVE
   | otherwise = case scene st of
       Scene'Start -> return $ updateStart input st
-      Scene'Play -> return $ st { playState = updatePlayState input (playState st) }
+      Scene'Play -> return $ if hp <= 0 then st { scene = Scene'GameOver } else st { playState = updatePlayerHp $ updatePlayState input (playState st) }
       Scene'GameOver -> return $ updateGameOver input st
   -- FOR DEBUGGING BELOW
   where
     pressed n = lookupKey (keys input) (Char (head $ show n)) == Pressed
     nextRoom n = return $ st { playState = (playState st) { player = (player (playState st)) { playerRoom = n } } }
+    hp = playerHp $ player $ playState st 
   -- FOR DEBUGGING ABOVE
 
 updateStart :: Input -> State -> State
@@ -129,16 +129,26 @@ updateStart input st = st
     isStart = lookupKey (keys input) Enter == Pressed || lookupKey (keys input) (Char ' ') == Pressed
 
 updateGameOver :: Input -> State -> State
-updateGameOver input st = st
-  { scene = if isStart then Scene'Start else Scene'GameOver }
+updateGameOver input st = if isStart then initState else st { scene = Scene'GameOver }
   where
     isStart = lookupKey (keys input) Enter == Pressed || lookupKey (keys input) (Char ' ') == Pressed
+
+updatePlayerHp :: PlayState -> PlayState
+updatePlayerHp pState = case lookupMap currPos es of
+  Just Enemy{enemyAtk} -> pState { player = p { playerHp = ( playerHp p ) - enemyAtk } }
+  Nothing -> pState
+  where
+    p = player pState
+    currPos = playerPos p
+    roomIndex = playerRoom p
+    room = fromJust $ lookupMap roomIndex (rooms pState)
+    es = enemies room
 
 updatePlayState :: Input -> PlayState -> PlayState
 updatePlayState input pState
   | S.member nextPos ws = pState
   | otherwise = case lookupMap currPos ds of
-      Just Door{doorToRoom}  -> nextRoom . toEnum $ unRoomIndex doorToRoom
+      Just Door{doorToRoom} -> nextRoom . toEnum $ unRoomIndex doorToRoom
       Nothing -> pState { player = p { playerPos = updatePlayerPos input (playerPos p) } }
   where
     p = player pState
