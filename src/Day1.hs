@@ -286,4 +286,4 @@ randomWalls = S.fromList <$> sequence (replicate ((screenW * screenH) `div` 8) r
 randomEnemies :: IO (Map (Int, Int) Enemy)
 randomEnemies = fromList <$> sequence [randomEnemy, randomEnemy, randomEnemy]
   where
-    randomEnemy = (,) <$> randomLocation <*> (Enemy 1 <$> randomRIO (1,3))
+    randomEnemy = (,) <$> randomLocation <*> (Enemy <$> randomRIO (1,3))
