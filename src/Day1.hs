@@ -1,9 +1,10 @@
 module Day1 where
 
 import qualified Data.Set as S
+import Control.Applicative ((<|>))
 import Data.Tuple
 import Data.Char (intToDigit)
-import Data.Maybe (fromJust, isJust)
+import Data.Maybe (fromJust, isJust, fromMaybe)
 import GridProto.Classic
 import GridProto.Core
 import System.Random (randomIO, randomRIO, Random)
@@ -24,6 +25,8 @@ data Scene
 
 data PlayState = PlayState
   { player :: Player
+  , nextDir :: Maybe Dir
+  , tick :: Int
   , rooms :: Map RoomIndex Room
   , roomCount :: Int
   } deriving (Show, Eq)
@@ -84,6 +87,8 @@ initState = State
   { scene = Scene'Start
   , playState = PlayState
       { player = Player (0,0) 0 20
+      , nextDir = Nothing
+      , tick = 0
       , rooms = fromList $
           [ ( 0
             , Room
@@ -145,21 +150,42 @@ updatePlayerHp pState = case lookupMap currPos es of
     room = fromJust $ lookupMap roomIndex (rooms pState)
     es = enemies room
 
+stepTick :: PlayState -> PlayState
+stepTick pState = pState { tick = (tick pState + 1) `mod` 6 }
+
 updatePlayState :: Input -> PlayState -> PlayState
 updatePlayState input pState
-  | S.member nextPos ws = pState
-  | otherwise = case lookupMap currPos ds of
+  | tick pState /= 0 = stepTick $ pState { nextDir = dirFromInput input <|> nextDir pState }
+  | S.member nextPos ws = stepTick $ pState { nextDir = Nothing }
+  | otherwise = stepTick $ case lookupMap currPos ds of
       Just Door{doorToRoom} -> nextRoom . toEnum $ unRoomIndex doorToRoom
-      Nothing -> pState { player = p { playerPos = updatePlayerPos input (playerPos p) } }
+      Nothing -> pState
+        { player = p { playerPos = nextPos }
+        , nextDir = Nothing
+        }
   where
     p = player pState
     currPos = playerPos p
-    nextPos = updatePlayerPos input currPos  
+    nextPos = fromMaybe currPos (applyDir currPos <$> nextDir pState)
     roomIndex = playerRoom p
     room = fromJust $ lookupMap roomIndex (rooms pState)
     ws = walls room
     ds = doors room
     nextRoom n = pState { player = ( player pState ) { playerRoom = n }, roomCount = ( roomCount pState + 1 )  }
+
+applyDir :: (Int, Int) -> Dir -> (Int, Int)
+applyDir (x,y) d = (inX $ x + x', inY $ y + y')
+  where
+    (x', y') = fromDir d
+    inX = min (pred screenW) . max 0
+    inY = min (pred screenH) . max 0
+
+fromDir :: Dir -> (Int, Int)
+fromDir d = case d of
+  U -> (0,-1)
+  D -> (0,1)
+  L -> (-1,0)
+  R -> (1,0)
 
 updatePlayerPos :: Input -> (Int, Int) -> (Int, Int)
 updatePlayerPos input (x,y) = (inX $ x' + x, inY $ y' + y)
