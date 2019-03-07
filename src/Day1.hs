@@ -226,12 +226,13 @@ drawPlay st = placeTilesAt ( mergeTiles clear ( mergeTiles ws ( mergeTiles ds ( 
     hp = playerHp $ player $ playState st
 
 drawHUD :: Int -> Map (Int, Int) Tile
-drawHUD hp = fromList $ map (hpTile cutoff) locList   
+drawHUD hp = fromList $ map (\(x,y) -> if y < cutoff then ((x, y), emptyTile) else ((x, y), fullTile)) locList   
   where   
-    hpTile :: Int -> (Int, Int) -> ((Int, Int), Tile)
-    hpTile c (x, y) = if y < c then ((x, y), emptyTile) else ((x, y), fullTile) 
-    cutoff = 10 - (hp `div` 10)
-    locList = (0,) <$> [0..9]
+    maxHp = 100
+    maxHpTiles = maxHp `div` 10 
+    hpTiles = hp `div` 10   
+    cutoff = maxHpTiles - hpTiles
+    locList = (0,) <$> [0..(maxHpTiles - 1)]
     emptyTile = Tile Nothing (Just (Square, rs0)) Nothing
     fullTile = Tile Nothing (Just (FillSquare, rs0)) Nothing
 
