@@ -158,12 +158,15 @@ updatePlayState input pState
   | tick pState /= 0 = stepTick $ pState { nextDir = dirFromInput input <|> nextDir pState }
   | S.member nextPos ws = stepTick $ pState { nextDir = Nothing }
   | otherwise = stepTick $ case lookupMap currPos ds of
-      Just Door{doorToRoom} -> nextRoom . toEnum $ unRoomIndex doorToRoom
-      Nothing -> pState
-        { player = p { playerPos = nextPos }
-        , nextDir = Nothing
-        }
+      Just Door{doorToRoom} -> if roomIndex == doorToRoom
+        then movedPlayer
+        else nextRoom . toEnum $ unRoomIndex doorToRoom
+      Nothing -> movedPlayer
   where
+    movedPlayer = pState 
+      { player = p { playerPos = nextPos }
+      , nextDir = Nothing
+      }
     p = player pState
     currPos = playerPos p
     nextPos = fromMaybe currPos (applyDir currPos <$> nextDir pState)
