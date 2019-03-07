@@ -65,7 +65,7 @@ classic :: Classic State
 classic = Classic
   { title = "Day 1"
   , rows = screenH
-  , cols = screenW
+  , cols = screenW + 1
   , tilePixelSize = 32
   , backgroundColor = Black2
   , setupFn = generateInitState
@@ -86,7 +86,7 @@ initState :: State
 initState = State
   { scene = Scene'Start
   , playState = PlayState
-      { player = Player (0,0) 0 20
+      { player = Player (0,0) 0 50
       , nextDir = Nothing
       , tick = 0
       , rooms = fromList $
@@ -209,7 +209,7 @@ drawStart :: State -> Map (Int, Int) Tile
 drawStart st = text "DAY 1" White1 (screenW `div` 2 - 2, screenH `div` 2)
 
 drawPlay :: State -> Map (Int, Int) Tile
-drawPlay st = mergeTiles clear ( mergeTiles ws ( mergeTiles ds ( mergeTiles es playerTile ) ) )
+drawPlay st = placeTilesAt ( mergeTiles clear ( mergeTiles ws ( mergeTiles ds ( mergeTiles es playerTile ) ) ) ) (screenW, 0) (drawHUD hp)
   where
     (x,y) = playerPos (player (playState st))
     clear = clearTileMap (colorFromRoomIndex (playerRoom (player (playState st))))
@@ -219,6 +219,17 @@ drawPlay st = mergeTiles clear ( mergeTiles ws ( mergeTiles ds ( mergeTiles es p
     ds = doorTileMap $ doors room
     ws = wallTileMap $ walls room
     es = enemyTileMap $ enemies room
+    hp = playerHp $ player $ playState st
+
+drawHUD :: Int -> Map (Int, Int) Tile
+drawHUD hp = fromList $ map (hpTile cutoff) locList   
+  where   
+    hpTile :: Int -> (Int, Int) -> ((Int, Int), Tile)
+    hpTile c (x, y) = if y < c then ((x, y), emptyTile) else ((x, y), fullTile) 
+    cutoff = 10 - (hp `div` 10)
+    locList = (0,) <$> [0..9]
+    emptyTile = Tile Nothing (Just (Square, rs0)) Nothing
+    fullTile = Tile Nothing (Just (FillSquare, rs0)) Nothing
 
 drawGameOver :: State -> Map (Int, Int) Tile
 drawGameOver st = mergeTiles
