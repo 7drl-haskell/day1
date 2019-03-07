@@ -82,13 +82,13 @@ screenH = 30
 centerX = screenW `div` 2
 centerY = screenH `div` 2
 hudW    = 1
-maxHp   = 150
+maxHp   = 100
 
 initState :: State
 initState = State
   { scene = Scene'Start
   , playState = PlayState
-      { player = Player (0,0) 0 10
+      { player = Player (0,0) 0 50
       , nextDir = Nothing
       , tick = 0
       , rooms = fromList $ []
