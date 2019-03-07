@@ -76,30 +76,22 @@ classic = Classic
   , quitFn = const False
   }
 
-screenW, screenH, centerX, centerY :: Int
+screenW, screenH, centerX, centerY, maxHp :: Int
 screenW = 45
 screenH = 30
 centerX = screenW `div` 2
 centerY = screenH `div` 2
 hudW    = 1
+maxHp   = 100
 
 initState :: State
 initState = State
   { scene = Scene'Start
   , playState = PlayState
-      { player = Player (0,0) 0 50
+      { player = Player (0,0) 0 maxHp
       , nextDir = Nothing
       , tick = 0
-      , rooms = fromList $
-          [ ( 0
-            , Room
-                { doors   = fromList [ ( (3,2), Door 1 ), ( (10,15), Door 2 ) ]
-                , walls   = S.fromList [ (1,2), (1,3), (1,4), (1,5), (1,6), (1,7) ]
-                , enemies = fromList [ ( (12, 16), (Enemy 10) ), ( (7, 21), (Enemy 10) )  ]
-                }
-            )
-          ] ++ 
-          zip [1..9] (repeat $ Room mempty S.empty mempty)
+      , rooms = fromList $ []
       , roomCount = 0
       }
   }
@@ -228,7 +220,6 @@ drawPlay st = placeTilesAt ( mergeTiles clear ( mergeTiles ws ( mergeTiles ds ( 
 drawHUD :: Int -> Map (Int, Int) Tile
 drawHUD hp = fromList $ map (\(x,y) -> if y < cutoff then ((x, y), emptyTile) else ((x, y), fullTile)) locList   
   where   
-    maxHp = 100
     maxHpTiles = maxHp `div` 10 
     hpTiles = hp `div` 10   
     cutoff = maxHpTiles - hpTiles
