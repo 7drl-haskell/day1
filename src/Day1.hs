@@ -14,7 +14,6 @@ main = runClassic classic
 data State = State
   { scene :: Scene
   , playState :: PlayState
-  , roomCount :: Int
   } deriving (Show, Eq)
 
 data Scene
@@ -26,6 +25,7 @@ data Scene
 data PlayState = PlayState
   { player :: Player
   , rooms :: Map RoomIndex Room
+  , roomCount :: Int
   } deriving (Show, Eq)
 
 data Room = Room
@@ -94,8 +94,8 @@ initState = State
             )
           ] ++ 
           zip [1..9] (repeat $ Room mempty S.empty mempty)
+      , roomCount = 0
       }
-  , roomCount = 0
   }
 
 update :: Input -> State -> IO State
@@ -115,7 +115,7 @@ update input st
   | otherwise = case scene st of
       Scene'Start -> return $ updateStart input st
       Scene'Play -> return $ if hp <= 0 then st { scene = Scene'GameOver } else st { playState = updatePlayerHp $ updatePlayState input (playState st) }
-      Scene'GameOver -> return $ updateGameOver input st
+      Scene'GameOver -> updateGameOver input st
   -- FOR DEBUGGING BELOW
   where
     pressed n = lookupKey (keys input) (Char (head $ show n)) == Pressed
@@ -129,8 +129,8 @@ updateStart input st = st
   where
     isStart = lookupKey (keys input) Enter == Pressed || lookupKey (keys input) (Char ' ') == Pressed
 
-updateGameOver :: Input -> State -> State
-updateGameOver input st = if isStart then initState else st { scene = Scene'GameOver }
+updateGameOver :: Input -> State -> IO State
+updateGameOver input st = if isStart then generateInitState else return $ st { scene = Scene'GameOver }
   where
     isStart = lookupKey (keys input) Enter == Pressed || lookupKey (keys input) (Char ' ') == Pressed
 
@@ -159,7 +159,7 @@ updatePlayState input pState
     room = fromJust $ lookupMap roomIndex (rooms pState)
     ws = walls room
     ds = doors room
-    nextRoom n = pState { player = ( player (pState) ) { playerRoom = n } }
+    nextRoom n = pState { player = ( player pState ) { playerRoom = n }, roomCount = ( roomCount pState + 1 )  }
 
 updatePlayerPos :: Input -> (Int, Int) -> (Int, Int)
 updatePlayerPos input (x,y) = (inX $ x' + x, inY $ y' + y)
@@ -201,7 +201,7 @@ drawGameOver st = mergeTiles
   where
     roomCountText = "Room Count"
     roomCountTextX = centerX - (length roomCountText) `div` 2
-    roomCountValue = show (roomCount st)
+    roomCountValue = show (roomCount $ playState st)
     roomCountValueX = centerX - (length roomCountValue) `div` 2
 
 text :: String -> Color -> (Int, Int) -> Map (Int, Int) Tile
@@ -268,14 +268,12 @@ generateInitState = generateRooms >>= \rs -> return initState { playState = (pla
 generateRooms :: IO (Map RoomIndex Room)
 generateRooms = fromList <$> mapM (\r -> (r,) <$> (Room <$> randomDoors <*> randomWalls <*> randomEnemies)) rooms
   where
-    roomRange = (0,9)
     rooms = [0..9]
 
 randomDoors :: IO (Map (Int,Int) Door)
 randomDoors = fromList <$> (sequence $ replicate 3 $ (,) <$> randomLocation <*> (Door <$> randomRIO roomRange))
   where
     roomRange = (0,9)
-    rooms = [0..9]
 
 randomLocation :: IO (Int, Int)
 randomLocation = (,) <$> randomRIO (0,pred screenW) <*> randomRIO (0,pred screenH)
@@ -286,4 +284,4 @@ randomWalls = S.fromList <$> sequence (replicate ((screenW * screenH) `div` 8) r
 randomEnemies :: IO (Map (Int, Int) Enemy)
 randomEnemies = fromList <$> sequence [randomEnemy, randomEnemy, randomEnemy]
   where
-    randomEnemy = (,) <$> randomLocation <*> (Enemy 1 <$> randomRIO (1,3))
+    randomEnemy = (,) <$> randomLocation <*> (Enemy <$> randomRIO (1,3))
