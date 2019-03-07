@@ -268,7 +268,6 @@ generateInitState = generateRooms >>= \rs -> return initState { playState = (pla
 generateRooms :: IO (Map RoomIndex Room)
 generateRooms = fromList <$> mapM (\r -> (r,) <$> (Room <$> randomDoors <*> randomWalls <*> randomEnemies)) rooms
   where
-    roomRange = (0,9)
     rooms = [0..9]
 
 randomDoors :: IO (Map (Int,Int) Door)
