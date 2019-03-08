@@ -65,7 +65,7 @@ classic :: Classic State
 classic = Classic
   { title = "Day 1"
   , rows = screenH
-  , cols = screenW + hudW
+  , cols = screenW
   , tilePixelSize = 32
   , backgroundColor = Black2
   , setupFn = generateInitState
@@ -77,11 +77,12 @@ classic = Classic
   }
 
 screenW, screenH, centerX, centerY, hudW, maxHp :: Int
-screenW = 45
+gameW   = 45
+hudW    = 1
+screenW = gameW + hudW
 screenH = 30
 centerX = screenW `div` 2
 centerY = screenH `div` 2
-hudW    = 1
 maxHp   = 100
 
 initState :: State
