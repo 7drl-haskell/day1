@@ -66,7 +66,7 @@ classic = Classic
   { title = "Day 1"
   , rows = screenH
   , cols = screenW
-  , tilePixelSize = 32
+  , tilePixelSize = 24
   , backgroundColor = Black2
   , setupFn = generateInitState
   , updateFn = update
@@ -77,10 +77,11 @@ classic = Classic
   }
 
 screenW, screenH, centerX, centerY, hudW, maxHp :: Int
-gameW   = 45
+gameW   = 44
+gameH   = 30
 hudW    = 1
 screenW = gameW + hudW
-screenH = 30
+screenH = gameH
 centerX = screenW `div` 2
 centerY = screenH `div` 2
 maxHp   = 100
@@ -174,8 +175,8 @@ applyDir :: (Int, Int) -> Dir -> (Int, Int)
 applyDir (x,y) d = (inX $ x + x', inY $ y + y')
   where
     (x', y') = fromDir d
-    inX = min (pred screenW) . max 0
-    inY = min (pred screenH) . max 0
+    inX = min (pred gameW) . max 0
+    inY = min (pred gameH) . max 0
 
 fromDir :: Dir -> (Int, Int)
 fromDir d = case d of
@@ -193,8 +194,8 @@ updatePlayerPos input (x,y) = (inX $ x' + x, inY $ y' + y)
       Just D -> (0,1)
       Just L -> (-1,0)
       Just R -> (1,0)
-    inX = min (pred screenW) . max 0
-    inY = min (pred screenH) . max 0
+    inX = min (pred gameW) . max 0
+    inY = min (pred gameH) . max 0
 
 tileMap :: State -> Map (Int, Int) Tile
 tileMap st = case scene st of
@@ -203,10 +204,10 @@ tileMap st = case scene st of
   Scene'GameOver -> drawGameOver st
 
 drawStart :: State -> Map (Int, Int) Tile
-drawStart st = text "DAY 1" White1 (screenW `div` 2 - 2, screenH `div` 2)
+drawStart st = text "DAY 1" White1 (gameW `div` 2 - 2, gameH `div` 2)
 
 drawPlay :: State -> Map (Int, Int) Tile
-drawPlay st = placeTilesAt ( mergeTiles clear ( mergeTiles ws ( mergeTiles ds ( mergeTiles es playerTile ) ) ) ) (screenW, 0) (drawHUD hp)
+drawPlay st = placeTilesAt ( mergeTiles clear ( mergeTiles ws ( mergeTiles ds ( mergeTiles es playerTile ) ) ) ) (gameW, 0) (drawHUD hp)
   where
     (x,y) = playerPos (player (playState st))
     clear = clearTileMap (colorFromRoomIndex (playerRoom (player (playState st))))
@@ -249,8 +250,8 @@ text s c (x,y) = fromList (line s)
 clearTileMap :: Color -> Map (Int, Int) Tile
 clearTileMap c = fromList
   [ ((x,y), Tile Nothing Nothing (Just c))
-  | y <- [0..pred screenH]
-  , x <- [0..pred screenW]
+  | y <- [0..pred gameH]
+  , x <- [0..pred gameW]
   ]
 
 colorFromRoomIndex :: RoomIndex -> Color
@@ -312,10 +313,10 @@ randomDoors = fromList <$> (sequence $ replicate 3 $ (,) <$> randomLocation <*> 
     roomRange = (0,9)
 
 randomLocation :: IO (Int, Int)
-randomLocation = (,) <$> randomRIO (0,pred screenW) <*> randomRIO (0,pred screenH)
+randomLocation = (,) <$> randomRIO (0,pred gameW) <*> randomRIO (0,pred gameH)
 
 randomWalls :: IO (S.Set (Int, Int))
-randomWalls = S.fromList <$> sequence (replicate ((screenW * screenH) `div` 8) randomLocation)
+randomWalls = S.fromList <$> sequence (replicate ((gameW * gameH) `div` 8) randomLocation)
 
 randomEnemies :: IO (Map (Int, Int) Enemy)
 randomEnemies = fromList <$> sequence [randomEnemy, randomEnemy, randomEnemy]
