@@ -76,29 +76,23 @@ classic = Classic
   , quitFn = const False
   }
 
-screenW, screenH, centerX, centerY :: Int
-screenW = 45
+screenW, screenH, centerX, centerY, hudW, maxHp :: Int
+gameW   = 45
+hudW    = 1
+screenW = gameW + hudW
 screenH = 30
 centerX = screenW `div` 2
 centerY = screenH `div` 2
+maxHp   = 100
 
 initState :: State
 initState = State
   { scene = Scene'Start
   , playState = PlayState
-      { player = Player (0,0) 0 20
+      { player = Player (0,0) 0 50
       , nextDir = Nothing
       , tick = 0
-      , rooms = fromList $
-          [ ( 0
-            , Room
-                { doors   = fromList [ ( (3,2), Door 1 ), ( (10,15), Door 2 ) ]
-                , walls   = S.fromList [ (1,2), (1,3), (1,4), (1,5), (1,6), (1,7) ]
-                , enemies = fromList [ ( (12, 16), (Enemy 10) ), ( (7, 21), (Enemy 10) )  ]
-                }
-            )
-          ] ++ 
-          zip [1..9] (repeat $ Room mempty S.empty mempty)
+      , rooms = fromList $ []
       , roomCount = 0
       }
   }
@@ -212,7 +206,7 @@ drawStart :: State -> Map (Int, Int) Tile
 drawStart st = text "DAY 1" White1 (screenW `div` 2 - 2, screenH `div` 2)
 
 drawPlay :: State -> Map (Int, Int) Tile
-drawPlay st = mergeTiles clear ( mergeTiles ws ( mergeTiles ds ( mergeTiles es playerTile ) ) )
+drawPlay st = placeTilesAt ( mergeTiles clear ( mergeTiles ws ( mergeTiles ds ( mergeTiles es playerTile ) ) ) ) (screenW, 0) (drawHUD hp)
   where
     (x,y) = playerPos (player (playState st))
     clear = clearTileMap (colorFromRoomIndex (playerRoom (player (playState st))))
@@ -222,6 +216,19 @@ drawPlay st = mergeTiles clear ( mergeTiles ws ( mergeTiles ds ( mergeTiles es p
     ds = doorTileMap $ doors room
     ws = wallTileMap $ walls room
     es = enemyTileMap $ enemies room
+    hp = playerHp $ player $ playState st
+
+drawHUD :: Int -> Map (Int, Int) Tile
+drawHUD hp = placeTilesAt hpTileMap (0, maxHpTiles + 1) hpLabelMap 
+  where   
+    maxHpTiles = (maxHp `div` 10) - 1 
+    hpTiles = hp `div` 10   
+    cutoff = maxHpTiles - hpTiles
+    locList = (0,) <$> [0..(maxHpTiles)]
+    emptyTile = Tile Nothing (Just (Square, rs0)) Nothing
+    fullTile = Tile Nothing (Just (FillSquare, rs0)) Nothing
+    hpTileMap = fromList $ map (\(x,y) -> if y <= cutoff then ((x, y), emptyTile) else ((x, y), fullTile)) locList
+    hpLabelMap = fromList $ [((0, 0), Tile ( Just ('H', rs0) ) Nothing Nothing), ((0, 1), Tile ( Just ('P', rs0) ) Nothing Nothing)]
 
 drawGameOver :: State -> Map (Int, Int) Tile
 drawGameOver st = mergeTiles
