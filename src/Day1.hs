@@ -1,6 +1,7 @@
 module Day1 where
 
 import qualified Data.Set as S
+import qualified Data.Map as Map
 import Control.Applicative ((<|>))
 import Data.Tuple
 import Data.Char (intToDigit)
@@ -303,7 +304,11 @@ generateInitState :: IO State
 generateInitState = generateRooms >>= \rs -> return initState { playState = (playState initState) { rooms = rs } }
 
 generateRooms :: IO (Map RoomIndex Room)
-generateRooms = fromList <$> mapM (\r -> (r,) <$> (Room <$> randomDoors <*> randomWalls <*> randomEnemies)) rooms
+generateRooms = fmap fromList $ flip mapM rooms $ \r -> fmap (r,) $ do
+  doors <- randomDoors
+  walls <- randomWalls (\loc -> not $ Map.member loc doors)
+  enemies <- randomEnemies (\loc -> not $ Map.member loc doors || S.member loc walls)
+  return $ Room doors walls enemies
   where
     rooms = [0..9]
 
@@ -315,10 +320,18 @@ randomDoors = fromList <$> (sequence $ replicate 3 $ (,) <$> randomLocation <*> 
 randomLocation :: IO (Int, Int)
 randomLocation = (,) <$> randomRIO (0,pred gameW) <*> randomRIO (0,pred gameH)
 
-randomWalls :: IO (S.Set (Int, Int))
-randomWalls = S.fromList <$> sequence (replicate ((gameW * gameH) `div` 8) randomLocation)
+randomWalls :: ((Int, Int) -> Bool) -> IO (S.Set (Int, Int))
+randomWalls predicate = S.fromList <$> sequence (replicate ((gameW * gameH) `div` 8) (eligibleLocation predicate))
 
-randomEnemies :: IO (Map (Int, Int) Enemy)
-randomEnemies = fromList <$> sequence [randomEnemy, randomEnemy, randomEnemy]
+randomEnemies :: ((Int, Int) -> Bool) -> IO (Map (Int, Int) Enemy)
+randomEnemies predicate = fromList <$> sequence [randomEnemy, randomEnemy, randomEnemy]
   where
-    randomEnemy = (,) <$> randomLocation <*> (Enemy <$> randomRIO (1,3))
+    randomEnemy = (,) <$> eligibleLocation predicate <*> (Enemy <$> randomRIO (1,3))
+
+eligibleLocation :: ((Int, Int) -> Bool) -> IO (Int, Int)
+eligibleLocation predicate = do
+  loc <- randomLocation
+  if predicate loc
+    then return loc
+    else eligibleLocation predicate
+
