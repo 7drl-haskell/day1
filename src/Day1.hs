@@ -30,6 +30,7 @@ data PlayState = PlayState
   , tick :: Int
   , rooms :: Map RoomIndex Room
   , roomCount :: Int
+  , changedRoom :: Bool
   } deriving (Show, Eq)
 
 data Room = Room
@@ -73,9 +74,12 @@ classic = Classic
   , updateFn = update
   , cleanupFn = const (return ())
   , tileMapFn = tileMap
-  , sfxFn = const []
+  , sfxFn = sfx
   , quitFn = const False
   }
+
+sfx :: State -> [Sfx]
+sfx State{playState=PlayState{changedRoom}} = if changedRoom then [SfxDoor] else []
 
 screenW, screenH, centerX, centerY, hudW, maxHp :: Int
 gameW   = 44
@@ -96,6 +100,7 @@ initState = State
       , tick = 0
       , rooms = fromList $ []
       , roomCount = 0
+      , changedRoom = False
       }
   }
 
@@ -115,7 +120,7 @@ update input st
   -- FOR DEUGGING ABOVE
   | otherwise = case scene st of
       Scene'Start -> return $ updateStart input st
-      Scene'Play -> return $ if hp <= 0 then st { scene = Scene'GameOver } else st { playState = updatePlayerHp $ updatePlayState input (playState st) }
+      Scene'Play -> return $ if hp <= 0 then st { scene = Scene'GameOver } else st { playState = stepTick $ updatePlayerHp $ updatePlayState input (sameRoom $ playState st) }
       Scene'GameOver -> updateGameOver input st
   -- FOR DEBUGGING BELOW
   where
@@ -149,11 +154,14 @@ updatePlayerHp pState = case lookupMap currPos es of
 stepTick :: PlayState -> PlayState
 stepTick pState = pState { tick = (tick pState + 1) `mod` 6 }
 
+sameRoom :: PlayState -> PlayState
+sameRoom pState = pState { changedRoom = False }
+
 updatePlayState :: Input -> PlayState -> PlayState
 updatePlayState input pState
-  | tick pState /= 0 = stepTick $ pState { nextDir = dirFromInput input <|> nextDir pState }
-  | S.member nextPos ws = stepTick $ pState { nextDir = Nothing }
-  | otherwise = stepTick $ case lookupMap currPos ds of
+  | tick pState /= 0 = pState { nextDir = dirFromInput input <|> nextDir pState }
+  | S.member nextPos ws = pState { nextDir = Nothing }
+  | otherwise = case lookupMap currPos ds of
       Just Door{doorToRoom} -> if roomIndex == doorToRoom
         then movedPlayer
         else nextRoom . toEnum $ unRoomIndex doorToRoom
@@ -170,7 +178,7 @@ updatePlayState input pState
     room = fromJust $ lookupMap roomIndex (rooms pState)
     ws = walls room
     ds = doors room
-    nextRoom n = pState { player = ( player pState ) { playerRoom = n }, roomCount = ( roomCount pState + 1 )  }
+    nextRoom n = pState { player = ( player pState ) { playerRoom = n }, roomCount = ( roomCount pState + 1 ), changedRoom = True  }
 
 applyDir :: (Int, Int) -> Dir -> (Int, Int)
 applyDir (x,y) d = (inX $ x + x', inY $ y + y')
