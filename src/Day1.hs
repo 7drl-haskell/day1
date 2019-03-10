@@ -85,12 +85,13 @@ addDoorSfx :: State -> [Sfx] -> [Sfx]
 addDoorSfx State{playState=PlayState{changedRoom}} sfxs = if changedRoom then SfxDoor : sfxs else sfxs
 
 addDamageSfx :: State -> [Sfx] -> [Sfx]
-addDamageSfx State{playState=PlayState{player, rooms}} sfxs = if Map.member playerLoc es then SfxDamage : sfxs else sfxs
+addDamageSfx State{playState=PlayState{player, rooms}} sfxs = if Map.member playerLoc es && hp > 0 then SfxDamage : sfxs else sfxs
   where
     playerLoc = playerPos $ player 
     roomIndex = playerRoom $ player 
     room = fromJust $ lookupMap roomIndex rooms
     es = enemies room
+    hp = playerHp player
 
 addSfx :: Sfx -> [Sfx] -> [Sfx]
 addSfx sfx sfxs = sfx : sfxs
