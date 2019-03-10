@@ -79,13 +79,21 @@ classic = Classic
   }
 
 sfx :: State -> [Sfx]
-sfx st@State{playState=PlayState{changedRoom}} = if changedRoom then [SfxDoor] else []
+sfx st = (addDamageSfx st . addDoorSfx st) []
+
+addDoorSfx :: State -> [Sfx] -> [Sfx]
+addDoorSfx State{playState=PlayState{changedRoom}} sfxs = if changedRoom then SfxDoor : sfxs else sfxs
+
+addDamageSfx :: State -> [Sfx] -> [Sfx]
+addDamageSfx State{playState=PlayState{player, rooms}} sfxs = if Map.member playerLoc es then SfxDamage : sfxs else sfxs
   where
-    playerLoc = playerPos $ player $ playState st
-    roomIndex = playerRoom $ player $ playState st
-    room = fromJust $ lookupMap roomIndex (rooms $ playState st)
+    playerLoc = playerPos $ player 
+    roomIndex = playerRoom $ player 
+    room = fromJust $ lookupMap roomIndex rooms
     es = enemies room
 
+addSfx :: Sfx -> [Sfx] -> [Sfx]
+addSfx sfx sfxs = sfx : sfxs
 
 screenW, screenH, centerX, centerY, hudW, maxHp :: Int
 gameW   = 44
