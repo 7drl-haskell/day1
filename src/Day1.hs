@@ -5,7 +5,7 @@ import qualified Data.Map as Map
 import Control.Applicative ((<|>))
 import Data.Tuple
 import Data.Char (intToDigit)
-import Data.Maybe (fromJust, isJust, fromMaybe)
+import Data.Maybe (fromJust, isJust, fromMaybe, catMaybes)
 import GridProto.Classic
 import GridProto.Core
 import System.Random (randomIO, randomRIO, Random)
@@ -79,22 +79,19 @@ classic = Classic
   }
 
 sfx :: State -> [Sfx]
-sfx st = (addDamageSfx st . addDoorSfx st) []
+sfx st = catMaybes $ map ($ st) [doorSfx, damageSfx]
 
-addDoorSfx :: State -> [Sfx] -> [Sfx]
-addDoorSfx State{playState=PlayState{changedRoom}} sfxs = if changedRoom then SfxDoor : sfxs else sfxs
+doorSfx :: State -> Maybe Sfx
+doorSfx State{playState=PlayState{changedRoom}} = if changedRoom then Just SfxDoor else Nothing
 
-addDamageSfx :: State -> [Sfx] -> [Sfx]
-addDamageSfx State{playState=PlayState{player, rooms}} sfxs = if Map.member playerLoc es && hp > 0 then SfxDamage : sfxs else sfxs
+damageSfx :: State -> Maybe Sfx
+damageSfx State{playState=PlayState{player, rooms}} = if Map.member playerLoc es && hp > 0 then Just SfxDamage else Nothing
   where
     playerLoc = playerPos $ player 
     roomIndex = playerRoom $ player 
     room = fromJust $ lookupMap roomIndex rooms
     es = enemies room
     hp = playerHp player
-
-addSfx :: Sfx -> [Sfx] -> [Sfx]
-addSfx sfx sfxs = sfx : sfxs
 
 screenW, screenH, centerX, centerY, hudW, maxHp :: Int
 gameW   = 44
