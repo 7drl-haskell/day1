@@ -79,7 +79,13 @@ classic = Classic
   }
 
 sfx :: State -> [Sfx]
-sfx State{playState=PlayState{changedRoom}} = if changedRoom then [SfxDoor] else []
+sfx st@State{playState=PlayState{changedRoom}} = if changedRoom then [SfxDoor] else []
+  where
+    playerLoc = playerPos $ player $ playState st
+    roomIndex = playerRoom $ player $ playState st
+    room = fromJust $ lookupMap roomIndex (rooms $ playState st)
+    es = enemies room
+
 
 screenW, screenH, centerX, centerY, hudW, maxHp :: Int
 gameW   = 44
